@@ -1,0 +1,1086 @@
+---
+import Layout from "../layouts/Layout.astro";
+import "../styles/map.css";
+---
+
+<Layout
+  title="AION — Historic World"
+  description="Explore humanity across geography and time."
+>
+  <main class="map-page">
+
+    <!-- =====================================================
+         MAP
+         ===================================================== -->
+
+    <div id="world-map"></div>
+
+    <!-- Atmosphere -->
+
+    <div class="map-vignette"></div>
+    <div class="map-noise"></div>
+
+
+    <!-- =====================================================
+         HEADER
+         ===================================================== -->
+
+    <header class="map-header">
+
+      <a href="/" class="map-logo">
+        A I O N
+      </a>
+
+      <div class="map-header-center">
+
+        <span class="eyebrow">
+          THE HISTORIC WORLD
+        </span>
+
+        <span
+          class="header-period"
+          id="header-period"
+        >
+          PRESENT DAY
+        </span>
+
+      </div>
+
+      <nav>
+
+        <a href="/map" class="active">
+          MAP
+        </a>
+
+        <a href="/timeline">
+          TIMELINE
+        </a>
+
+        <a href="/library">
+          LIBRARY
+        </a>
+
+        <a href="/about">
+          ABOUT
+        </a>
+
+      </nav>
+
+    </header>
+
+
+    <!-- =====================================================
+         TIME CONTROL
+         ===================================================== -->
+
+    <aside class="time-panel">
+
+      <div class="panel-label">
+        TIME
+      </div>
+
+      <div class="time-value">
+        <span id="year-display">
+          2026 CE
+        </span>
+      </div>
+
+      <div
+        class="era-name"
+        id="era-name"
+      >
+        CONTEMPORARY WORLD
+      </div>
+
+      <div class="timeline-control">
+
+        <input
+          id="time-slider"
+          type="range"
+          min="-3000"
+          max="2026"
+          value="2026"
+          step="1"
+          aria-label="Historical year"
+        />
+
+        <div class="slider-years">
+
+          <span>3000 BCE</span>
+          <span>1000 BCE</span>
+          <span>1 CE</span>
+          <span>1000</span>
+          <span>1500</span>
+          <span>2026</span>
+
+        </div>
+
+      </div>
+
+      <div class="time-hint">
+        Drag through time
+      </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         REGION PANEL
+         ===================================================== -->
+
+    <aside
+      class="region-panel"
+      id="region-panel"
+    >
+
+      <button
+        class="close-panel"
+        id="close-panel"
+        aria-label="Close region panel"
+      >
+        ×
+      </button>
+
+      <div class="region-eyebrow">
+        HISTORICAL WORLD
+      </div>
+
+      <h1 id="region-name">
+        India
+      </h1>
+
+      <p id="region-description">
+        Explore the history, civilizations,
+        mythology, epics, people, places,
+        events and stories of India.
+      </p>
+
+      <div class="region-meta">
+
+        <div>
+
+          <span>
+            PERIOD
+          </span>
+
+          <strong id="region-period">
+            CONTEMPORARY WORLD
+          </strong>
+
+        </div>
+
+        <div>
+
+          <span>
+            YEAR
+          </span>
+
+          <strong id="region-year">
+            2026 CE
+          </strong>
+
+        </div>
+
+      </div>
+
+      <a
+        id="enter-region"
+        class="enter-region"
+        href="/india"
+      >
+
+        <span>
+          ENTER INDIA
+        </span>
+
+        <span>
+          →
+        </span>
+
+      </a>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAP LEGEND
+         ===================================================== -->
+
+    <div class="map-legend">
+
+      <div>
+        <span class="legend-dot civilization"></span>
+        Civilizations
+      </div>
+
+      <div>
+        <span class="legend-dot event"></span>
+        Events
+      </div>
+
+      <div>
+        <span class="legend-dot people"></span>
+        People
+      </div>
+
+      <div>
+        <span class="legend-dot place"></span>
+        Places
+      </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         STATUS
+         ===================================================== -->
+
+    <div class="map-status">
+
+      <span class="status-dot"></span>
+
+      <span>
+        AION HISTORICAL ATLAS
+      </span>
+
+    </div>
+
+
+    <!-- =====================================================
+         INSTRUCTION
+         ===================================================== -->
+
+    <div class="map-instruction">
+
+      <span>
+        DRAG
+      </span>
+
+      <i>·</i>
+
+      <span>
+        ZOOM
+      </span>
+
+      <i>·</i>
+
+      <span>
+        ENTER A WORLD
+      </span>
+
+    </div>
+
+  </main>
+</Layout>
+
+
+<script>
+  import {
+    Map,
+    Marker,
+    NavigationControl,
+    ScaleControl,
+    setWorkerUrl,
+  } from "maplibre-gl";
+
+  import workerUrl from
+    "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
+
+  import "maplibre-gl/dist/maplibre-gl.css";
+
+
+  /* =========================================================
+     MAPLIBRE WORKER
+     ========================================================= */
+
+  setWorkerUrl(workerUrl);
+
+
+  /* =========================================================
+     HISTORICAL WORLDS
+     =========================================================
+     
+     IMPORTANT:
+     
+     These are NOT cities.
+     
+     They are AION's major global entry points.
+     
+     Detailed places such as:
+     
+     Pataliputra
+     Taxila
+     Athens
+     Sparta
+     Delphi
+     
+     will appear INSIDE their respective worlds.
+     ========================================================= */
+
+  interface HistoricalWorld {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    description: string;
+    path: string;
+  }
+
+
+  const historicalWorlds: HistoricalWorld[] = [
+
+    {
+      id: "mesopotamia",
+      name: "Mesopotamia",
+      latitude: 33.3,
+      longitude: 44.4,
+      description:
+        "Explore the civilizations, cities, mythology, peoples and stories of ancient Mesopotamia.",
+      path: "/mesopotamia",
+    },
+
+    {
+      id: "egypt",
+      name: "Egypt",
+      latitude: 27.0,
+      longitude: 30.0,
+      description:
+        "Explore ancient Egypt, its dynasties, gods, monuments, peoples and stories.",
+      path: "/egypt",
+    },
+
+    {
+      id: "greece",
+      name: "Greece",
+      latitude: 39.0,
+      longitude: 22.0,
+      description:
+        "Explore the Greek world, its civilizations, mythology, epics, philosophy and people.",
+      path: "/greece",
+    },
+
+    {
+      id: "rome",
+      name: "Rome",
+      latitude: 42.0,
+      longitude: 12.5,
+      description:
+        "Explore Rome and the civilizations, people, events and territories of the Roman world.",
+      path: "/rome",
+    },
+
+    {
+      id: "persia",
+      name: "Persia",
+      latitude: 32.0,
+      longitude: 53.0,
+      description:
+        "Explore the Persian world, its empires, peoples, traditions and historical transformations.",
+      path: "/persia",
+    },
+
+    {
+      id: "anatolia",
+      name: "Anatolia",
+      latitude: 39.0,
+      longitude: 35.0,
+      description:
+        "Explore the civilizations and cultures that shaped Anatolia across the ages.",
+      path: "/anatolia",
+    },
+
+    {
+      id: "levant",
+      name: "Levant",
+      latitude: 32.5,
+      longitude: 35.5,
+      description:
+        "Explore the ancient cultures, kingdoms, religions and stories of the Levant.",
+      path: "/levant",
+    },
+
+    {
+      id: "india",
+      name: "India",
+      latitude: 22.5,
+      longitude: 79.0,
+      description:
+        "Explore India's civilizations, history, mythology, epics, people, places and stories.",
+      path: "/india",
+    },
+
+    {
+      id: "central-asia",
+      name: "Central Asia",
+      latitude: 43.0,
+      longitude: 68.0,
+      description:
+        "Explore the peoples, cultures, kingdoms and trade networks of Central Asia.",
+      path: "/central-asia",
+    },
+
+    {
+      id: "china",
+      name: "China",
+      latitude: 35.0,
+      longitude: 103.0,
+      description:
+        "Explore China's dynasties, civilizations, philosophy, mythology, people and stories.",
+      path: "/china",
+    },
+
+    {
+      id: "japan",
+      name: "Japan",
+      latitude: 36.2,
+      longitude: 138.0,
+      description:
+        "Explore Japan's historical eras, traditions, mythology, people and cultural worlds.",
+      path: "/japan",
+    },
+
+    {
+      id: "southeast-asia",
+      name: "Southeast Asia",
+      latitude: 13.0,
+      longitude: 105.0,
+      description:
+        "Explore the civilizations, kingdoms, cultures and stories of Southeast Asia.",
+      path: "/southeast-asia",
+    },
+
+    {
+      id: "west-africa",
+      name: "West Africa",
+      latitude: 12.0,
+      longitude: -5.0,
+      description:
+        "Explore the kingdoms, peoples, cultures and stories of West Africa.",
+      path: "/west-africa",
+    },
+
+    {
+      id: "east-africa",
+      name: "East Africa",
+      latitude: 2.0,
+      longitude: 38.0,
+      description:
+        "Explore the ancient cultures, kingdoms, peoples and trade networks of East Africa.",
+      path: "/east-africa",
+    },
+
+    {
+      id: "mesoamerica",
+      name: "Mesoamerica",
+      latitude: 19.0,
+      longitude: -99.0,
+      description:
+        "Explore the civilizations, mythology, cities and stories of Mesoamerica.",
+      path: "/mesoamerica",
+    },
+
+    {
+      id: "andes",
+      name: "Andes",
+      latitude: -13.0,
+      longitude: -72.0,
+      description:
+        "Explore the civilizations, peoples, traditions and stories of the Andes.",
+      path: "/andes",
+    },
+
+    {
+      id: "north-america",
+      name: "North America",
+      latitude: 40.0,
+      longitude: -100.0,
+      description:
+        "Explore the diverse civilizations, peoples, traditions and histories of North America.",
+      path: "/north-america",
+    },
+
+  ];
+
+
+  /* =========================================================
+     MAP INITIALIZATION
+     ========================================================= */
+
+  const map = new Map({
+
+    container: "world-map",
+
+    /*
+     * Dark base map.
+     *
+     * This is much closer to AION than the bright
+     * MapLibre demonstration style.
+     */
+
+    style:
+      "https://tiles.openfreemap.org/styles/dark",
+
+    center: [25, 20],
+
+    zoom: 1.35,
+
+    minZoom: 1.15,
+
+    maxZoom: 7,
+
+    attributionControl: false,
+
+    dragRotate: false,
+
+    pitchWithRotate: false,
+
+  });
+
+
+  /* =========================================================
+     MAP ERRORS
+     ========================================================= */
+
+  map.on(
+    "error",
+    (event) => {
+
+      console.error(
+        "AION MAP ERROR:",
+        event
+      );
+
+    }
+  );
+
+
+  /* =========================================================
+     CONTROLS
+     ========================================================= */
+
+  map.addControl(
+
+    new NavigationControl({
+
+      showCompass: false,
+
+      visualizePitch: false,
+
+    }),
+
+    "bottom-right"
+
+  );
+
+
+  map.addControl(
+
+    new ScaleControl({
+
+      maxWidth: 120,
+
+      unit: "metric",
+
+    }),
+
+    "bottom-left"
+
+  );
+
+
+  /* =========================================================
+     DOM
+     ========================================================= */
+
+  const slider =
+    document.getElementById(
+      "time-slider"
+    ) as HTMLInputElement | null;
+
+
+  const yearDisplay =
+    document.getElementById(
+      "year-display"
+    );
+
+
+  const eraName =
+    document.getElementById(
+      "era-name"
+    );
+
+
+  const headerPeriod =
+    document.getElementById(
+      "header-period"
+    );
+
+
+  const regionPanel =
+    document.getElementById(
+      "region-panel"
+    );
+
+
+  const regionName =
+    document.getElementById(
+      "region-name"
+    );
+
+
+  const regionDescription =
+    document.getElementById(
+      "region-description"
+    );
+
+
+  const regionPeriod =
+    document.getElementById(
+      "region-period"
+    );
+
+
+  const regionYear =
+    document.getElementById(
+      "region-year"
+    );
+
+
+  const closePanel =
+    document.getElementById(
+      "close-panel"
+    );
+
+
+  const enterRegion =
+    document.getElementById(
+      "enter-region"
+    );
+
+
+  /* =========================================================
+     ERA
+     ========================================================= */
+
+  function getEra(
+    year: number
+  ): string {
+
+    if (year < -2500) {
+      return "EARLY CIVILIZATIONS";
+    }
+
+    if (year < -1200) {
+      return "BRONZE AGE";
+    }
+
+    if (year < -500) {
+      return "IRON AGE";
+    }
+
+    if (year < 1) {
+      return "CLASSICAL ANTIQUITY";
+    }
+
+    if (year < 500) {
+      return "LATE ANTIQUITY";
+    }
+
+    if (year < 1000) {
+      return "EARLY MEDIEVAL";
+    }
+
+    if (year < 1500) {
+      return "MEDIEVAL WORLD";
+    }
+
+    if (year < 1800) {
+      return "EARLY MODERN";
+    }
+
+    if (year < 1950) {
+      return "MODERN AGE";
+    }
+
+    return "CONTEMPORARY WORLD";
+  }
+
+
+  /* =========================================================
+     FORMAT YEAR
+     ========================================================= */
+
+  function formatYear(
+    year: number
+  ): string {
+
+    if (year < 0) {
+      return `${Math.abs(year)} BCE`;
+    }
+
+    return `${year} CE`;
+  }
+
+
+  /* =========================================================
+     REGION MARKER
+     ========================================================= */
+
+  function createRegionMarker(
+    world: HistoricalWorld
+  ) {
+
+    const markerElement =
+      document.createElement("button");
+
+    markerElement.className =
+      "aion-region-marker";
+
+    markerElement.type =
+      "button";
+
+    markerElement.setAttribute(
+      "aria-label",
+      `Explore ${world.name}`
+    );
+
+
+    /*
+     * Outer ring
+     */
+
+    const ring =
+      document.createElement("span");
+
+    ring.className =
+      "region-marker-ring";
+
+
+    /*
+     * Center point
+     */
+
+    const dot =
+      document.createElement("span");
+
+    dot.className =
+      "region-marker-dot";
+
+
+    /*
+     * Region name
+     */
+
+    const label =
+      document.createElement("span");
+
+    label.className =
+      "region-marker-label";
+
+    label.textContent =
+      world.name;
+
+
+    markerElement.appendChild(
+      ring
+    );
+
+    markerElement.appendChild(
+      dot
+    );
+
+    markerElement.appendChild(
+      label
+    );
+
+
+    /*
+     * Click
+     */
+
+    markerElement.addEventListener(
+      "click",
+      (event) => {
+
+        event.stopPropagation();
+
+        openRegion(world);
+
+      }
+    );
+
+
+    return markerElement;
+  }
+
+
+  /* =========================================================
+     OPEN REGION
+     ========================================================= */
+
+  function openRegion(
+    world: HistoricalWorld
+  ) {
+
+    if (!regionPanel) {
+      return;
+    }
+
+
+    if (regionName) {
+
+      regionName.textContent =
+        world.name;
+
+    }
+
+
+    if (regionDescription) {
+
+      regionDescription.textContent =
+        world.description;
+
+    }
+
+
+    if (enterRegion) {
+
+      enterRegion.setAttribute(
+        "href",
+        world.path
+      );
+
+      const text =
+        enterRegion.querySelector(
+          "span"
+        );
+
+      if (text) {
+
+        text.textContent =
+          `ENTER ${world.name.toUpperCase()}`;
+
+      }
+
+    }
+
+
+    regionPanel.classList.add(
+      "visible"
+    );
+
+
+    /*
+     * Move the globe slightly toward
+     * the selected historical world.
+     */
+
+    map.easeTo({
+
+      center: [
+        world.longitude,
+        world.latitude,
+      ],
+
+      zoom: 2.4,
+
+      duration: 1200,
+
+      essential: true,
+
+    });
+
+  }
+
+
+  /* =========================================================
+     MAP LOAD
+     ========================================================= */
+
+  map.on(
+    "load",
+    () => {
+
+      console.log(
+        "AION historical map initialized."
+      );
+
+
+      /*
+       * Enable globe.
+       */
+
+      map.setProjection({
+        type: "globe",
+      });
+
+
+      /*
+       * =====================================================
+       * ADD MAJOR HISTORICAL WORLDS
+       * =====================================================
+       *
+       * IMPORTANT:
+       *
+       * These are the ONLY locations shown
+       * on the initial world map.
+       *
+       * Detailed locations will be loaded inside
+       * the individual regional pages.
+       */
+
+      for (
+        const world of historicalWorlds
+      ) {
+
+        const marker =
+          createRegionMarker(
+            world
+          );
+
+
+        new Marker({
+          element: marker,
+
+          anchor: "center",
+
+        })
+
+          .setLngLat([
+            world.longitude,
+            world.latitude,
+          ])
+
+          .addTo(map);
+
+      }
+
+    }
+  );
+
+
+  /* =========================================================
+     TIMELINE
+     ========================================================= */
+
+  slider?.addEventListener(
+    "input",
+    () => {
+
+      const year =
+        Number(slider.value);
+
+
+      const formattedYear =
+        formatYear(year);
+
+
+      const era =
+        getEra(year);
+
+
+      if (yearDisplay) {
+
+        yearDisplay.textContent =
+          formattedYear;
+
+      }
+
+
+      if (eraName) {
+
+        eraName.textContent =
+          era;
+
+      }
+
+
+      if (regionYear) {
+
+        regionYear.textContent =
+          formattedYear;
+
+      }
+
+
+      if (regionPeriod) {
+
+        regionPeriod.textContent =
+          era;
+
+      }
+
+
+      if (headerPeriod) {
+
+        headerPeriod.textContent =
+          era;
+
+      }
+
+
+      /*
+       * =====================================================
+       * FUTURE
+       * =====================================================
+       *
+       * The region markers themselves can eventually
+       * change depending on the selected year.
+       *
+       * Example:
+       *
+       * 250 BCE
+       *
+       * India
+       * Greece
+       * Egypt
+       * Persia
+       * China
+       *
+       * will represent the historical worlds existing
+       * during that period.
+       *
+       * The detailed historical data lives INSIDE
+       * those regions.
+       */
+
+    }
+  );
+
+
+  /* =========================================================
+     CLOSE PANEL
+     ========================================================= */
+
+  closePanel?.addEventListener(
+    "click",
+    () => {
+
+      regionPanel?.classList.remove(
+        "visible"
+      );
+
+    }
+  );
+
+
+  /* =========================================================
+     ESCAPE
+     ========================================================= */
+
+  window.addEventListener(
+    "keydown",
+    (event) => {
+
+      if (event.key === "Escape") {
+
+        regionPanel?.classList.remove(
+          "visible"
+        );
+
+      }
+
+    }
+  );
+
+</script>
