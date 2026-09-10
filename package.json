@@ -1,7 +1,13 @@
 {
   "name": "certain-cluster",
-  "type": "module",
   "version": "0.0.1",
+  "dependencies": {
+    "astro": "^7.3.2",
+    "three": "^0.186.0"
+  },
+  "allowScripts": {
+    "esbuild": true
+  },
   "engines": {
     "node": ">=22.12.0"
   },
@@ -11,10 +17,5 @@
     "preview": "astro preview",
     "astro": "astro"
   },
-  "dependencies": {
-    "astro": "^7.3.2"
-  },
-  "allowScripts": {
-    "esbuild": true
-  }
+  "type": "module"
 }

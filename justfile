@@ -1,0 +1,3 @@
+run:
+    bun run dev
+    

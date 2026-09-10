@@ -1,0 +1,560 @@
+<section class="home">
+  <!-- 3D background -->
+  <div class="scene" aria-hidden="true">
+    <canvas id="aion-canvas"></canvas>
+  </div>
+
+  <!-- Dark atmospheric overlay -->
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <!-- Actual content -->
+  <main class="hero">
+    <div class="hero-content">
+
+      <div class="brand">
+        A I O N
+      </div>
+
+      <div class="hero-text">
+        <h1>
+          Explore Humanity
+          <br />
+          Through Time
+        </h1>
+
+        <p class="tagline">
+          The world, across the ages.
+        </p>
+      </div>
+
+      <p class="domains">
+        History
+        <span>·</span>
+        Mythology
+        <span>·</span>
+        Civilizations
+        <span>·</span>
+        People
+        <span>·</span>
+        Stories
+      </p>
+
+      <a href="/map" class="enter-button">
+        <span>Enter the Historic World</span>
+
+        <span class="arrow">
+          →
+        </span>
+      </a>
+
+      <p class="motto">
+        Where time becomes a map.
+      </p>
+
+    </div>
+  </main>
+</section>
+
+
+<script>
+  import * as THREE from "three";
+
+  const canvas = document.querySelector(
+    "#aion-canvas"
+  ) as HTMLCanvasElement | null;
+
+  if (canvas) {
+    /*
+     * -----------------------------------------
+     * SCENE
+     * -----------------------------------------
+     */
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(
+      45,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      100
+    );
+
+    camera.position.z = 7;
+
+
+    /*
+     * -----------------------------------------
+     * RENDERER
+     * -----------------------------------------
+     */
+
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+    });
+
+    renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, 2)
+    );
+
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
+
+
+    /*
+     * -----------------------------------------
+     * MAIN GLOBE
+     * -----------------------------------------
+     */
+
+    const globeGroup = new THREE.Group();
+
+    scene.add(globeGroup);
+
+
+    /*
+     * Wireframe globe
+     */
+
+    const globeGeometry =
+      new THREE.SphereGeometry(2.05, 48, 32);
+
+    const globeWireframe =
+      new THREE.WireframeGeometry(globeGeometry);
+
+    const globeMaterial =
+      new THREE.LineBasicMaterial({
+        color: 0xc8a15a,
+        transparent: true,
+        opacity: 0.13,
+      });
+
+    const globe =
+      new THREE.LineSegments(
+        globeWireframe,
+        globeMaterial
+      );
+
+    globeGroup.add(globe);
+
+
+    /*
+     * -----------------------------------------
+     * INNER GLOBE
+     * -----------------------------------------
+     */
+
+    const innerGeometry =
+      new THREE.SphereGeometry(1.96, 48, 32);
+
+    const innerMaterial =
+      new THREE.MeshBasicMaterial({
+        color: 0x10151c,
+        transparent: true,
+        opacity: 0.22,
+      });
+
+    const innerGlobe =
+      new THREE.Mesh(
+        innerGeometry,
+        innerMaterial
+      );
+
+    globeGroup.add(innerGlobe);
+
+
+    /*
+     * -----------------------------------------
+     * PARTICLE SPHERE
+     * -----------------------------------------
+     */
+
+    const particleCount = 1400;
+
+    const particlePositions =
+      new Float32Array(
+        particleCount * 3
+      );
+
+    for (let i = 0; i < particleCount; i++) {
+
+      const radius = 2.25;
+
+      const theta =
+        Math.random() * Math.PI * 2;
+
+      const phi =
+        Math.acos(
+          2 * Math.random() - 1
+        );
+
+      const x =
+        radius *
+        Math.sin(phi) *
+        Math.cos(theta);
+
+      const y =
+        radius *
+        Math.cos(phi);
+
+      const z =
+        radius *
+        Math.sin(phi) *
+        Math.sin(theta);
+
+      particlePositions[i * 3] = x;
+      particlePositions[i * 3 + 1] = y;
+      particlePositions[i * 3 + 2] = z;
+    }
+
+    const particleGeometry =
+      new THREE.BufferGeometry();
+
+    particleGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        particlePositions,
+        3
+      )
+    );
+
+    const particleMaterial =
+      new THREE.PointsMaterial({
+        color: 0xc8a15a,
+        size: 0.012,
+        transparent: true,
+        opacity: 0.55,
+      });
+
+    const particles =
+      new THREE.Points(
+        particleGeometry,
+        particleMaterial
+      );
+
+    globeGroup.add(particles);
+
+
+    /*
+     * -----------------------------------------
+     * TIME RINGS
+     * -----------------------------------------
+     */
+
+    const ringMaterial =
+      new THREE.MeshBasicMaterial({
+        color: 0xc8a15a,
+        transparent: true,
+        opacity: 0.16,
+        wireframe: true,
+      });
+
+
+    /*
+     * Ring 1
+     */
+
+    const ringGeometry1 =
+      new THREE.TorusGeometry(
+        2.65,
+        0.008,
+        8,
+        160
+      );
+
+    const ring1 =
+      new THREE.Mesh(
+        ringGeometry1,
+        ringMaterial
+      );
+
+    ring1.rotation.x =
+      Math.PI * 0.25;
+
+    ring1.rotation.z =
+      Math.PI * 0.15;
+
+    globeGroup.add(ring1);
+
+
+    /*
+     * Ring 2
+     */
+
+    const ringGeometry2 =
+      new THREE.TorusGeometry(
+        2.85,
+        0.006,
+        8,
+        160
+      );
+
+    const ring2 =
+      new THREE.Mesh(
+        ringGeometry2,
+        ringMaterial
+      );
+
+    ring2.rotation.x =
+      Math.PI * 0.75;
+
+    ring2.rotation.y =
+      Math.PI * 0.15;
+
+    globeGroup.add(ring2);
+
+
+    /*
+     * Ring 3
+     */
+
+    const ringGeometry3 =
+      new THREE.TorusGeometry(
+        3.05,
+        0.004,
+        8,
+        160
+      );
+
+    const ring3 =
+      new THREE.Mesh(
+        ringGeometry3,
+        ringMaterial
+      );
+
+    ring3.rotation.y =
+      Math.PI * 0.5;
+
+    ring3.rotation.z =
+      Math.PI * 0.3;
+
+    globeGroup.add(ring3);
+
+
+    /*
+     * -----------------------------------------
+     * CENTRAL POINT
+     * -----------------------------------------
+     */
+
+    const pointGeometry =
+      new THREE.SphereGeometry(
+        0.035,
+        16,
+        16
+      );
+
+    const pointMaterial =
+      new THREE.MeshBasicMaterial({
+        color: 0xc8a15a,
+      });
+
+    const point =
+      new THREE.Mesh(
+        pointGeometry,
+        pointMaterial
+      );
+
+    point.position.set(
+      0.9,
+      0.75,
+      1.7
+    );
+
+    globeGroup.add(point);
+
+
+    /*
+     * -----------------------------------------
+     * SECONDARY POINTS
+     * -----------------------------------------
+     */
+
+    const locations = [
+      [-0.9, 0.5, 1.7],
+      [0.3, -1.1, 1.7],
+      [-1.2, -0.7, 1.45],
+      [1.1, -0.25, 1.7],
+    ];
+
+    locations.forEach(
+      ([x, y, z]) => {
+
+        const marker =
+          new THREE.Mesh(
+            pointGeometry,
+            pointMaterial
+          );
+
+        marker.position.set(
+          x,
+          y,
+          z
+        );
+
+        globeGroup.add(marker);
+      }
+    );
+
+
+    /*
+     * -----------------------------------------
+     * MOUSE PARALLAX
+     * -----------------------------------------
+     */
+
+    let mouseX = 0;
+    let mouseY = 0;
+
+    let targetX = 0;
+    let targetY = 0;
+
+    window.addEventListener(
+      "mousemove",
+      (event) => {
+
+        mouseX =
+          (event.clientX /
+            window.innerWidth) *
+            2 -
+          1;
+
+        mouseY =
+          (event.clientY /
+            window.innerHeight) *
+            2 -
+          1;
+      }
+    );
+
+
+    /*
+     * -----------------------------------------
+     * RESIZE
+     * -----------------------------------------
+     */
+
+    window.addEventListener(
+      "resize",
+      () => {
+
+        camera.aspect =
+          window.innerWidth /
+          window.innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+          window.innerWidth,
+          window.innerHeight
+        );
+
+        renderer.setPixelRatio(
+          Math.min(
+            window.devicePixelRatio,
+            2
+          )
+        );
+      }
+    );
+
+
+    /*
+     * -----------------------------------------
+     * ANIMATION
+     * -----------------------------------------
+     */
+
+    const clock =
+      new THREE.Clock();
+
+    function animate() {
+
+      requestAnimationFrame(
+        animate
+      );
+
+      const elapsed =
+        clock.getElapsedTime();
+
+
+      /*
+       * Globe rotation
+       */
+
+      globe.rotation.y =
+        elapsed * 0.055;
+
+      particles.rotation.y =
+        elapsed * 0.065;
+
+
+      /*
+       * Rings rotate differently
+       */
+
+      ring1.rotation.z +=
+        0.0008;
+
+      ring2.rotation.x +=
+        0.0005;
+
+      ring3.rotation.y +=
+        0.0004;
+
+
+      /*
+       * Gentle breathing effect
+       */
+
+      const scale =
+        1 +
+        Math.sin(elapsed * 0.7) *
+        0.012;
+
+      globeGroup.scale.set(
+        scale,
+        scale,
+        scale
+      );
+
+
+      /*
+       * Mouse movement
+       */
+
+      targetX = mouseX * 0.18;
+      targetY = mouseY * 0.12;
+
+      globeGroup.rotation.y +=
+        (targetX -
+          globeGroup.rotation.y) *
+        0.015;
+
+      globeGroup.rotation.x +=
+        (-targetY -
+          globeGroup.rotation.x) *
+        0.015;
+
+
+      /*
+       * Tiny floating motion
+       */
+
+      globeGroup.position.y =
+        Math.sin(elapsed * 0.45) *
+        0.035;
+
+
+      renderer.render(
+        scene,
+        camera
+      );
+    }
+
+    animate();
+  }
+</script>
