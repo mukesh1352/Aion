@@ -1,10 +1,9 @@
 :root {
-  --background: #080a0d;
-  --foreground: #e8e3d8;
-  --muted: #8e8b84;
-  --accent: #c8a15a;
-  --border: rgba(200, 161, 90, 0.35);
-  --border-hover: rgba(200, 161, 90, 0.8);
+  --bg: #050607;
+  --text: #eee9df;
+  --muted: #a29d93;
+  --gold: #c8a15a;
+  --gold-bright: #e0bd78;
 }
 
 * {
@@ -15,17 +14,15 @@ html,
 body {
   margin: 0;
   padding: 0;
+
   width: 100%;
   min-height: 100%;
-}
 
-html {
-  background: var(--background);
+  background: var(--bg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  color: var(--text);
 
   font-family:
     Georgia,
@@ -39,42 +36,102 @@ a {
 }
 
 
-/* =========================================
+/* ==============================================
    HOME
-   ========================================= */
+   ============================================== */
 
 .home {
   position: relative;
 
   width: 100%;
-  min-height: 100vh;
+  height: 100vh;
+
+  min-height: 700px;
 
   overflow: hidden;
 
-  background:
-    radial-gradient(
-      circle at 50% 45%,
-      rgba(38, 59, 85, 0.14),
-      transparent 35%
-    ),
-    var(--background);
+  background: #050607;
 }
 
 
-/* =========================================
-   THREE.JS SCENE
-   ========================================= */
+/* ==============================================
+   HERO ART
+   ============================================== */
 
-.scene {
+.hero-image {
   position: absolute;
 
   inset: 0;
 
+  z-index: 0;
+
+  overflow: hidden;
+}
+
+
+.hero-image img {
   width: 100%;
   height: 100%;
 
+  object-fit: cover;
+
+  object-position: center;
+
+  filter:
+    brightness(0.68)
+    contrast(1.12)
+    saturate(0.75);
+
+  transform: scale(1.04);
+
+  animation:
+    slow-camera
+    22s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+
+@keyframes slow-camera {
+
+  0% {
+    transform:
+      scale(1.04)
+      translate3d(
+        0,
+        0,
+        0
+      );
+  }
+
+  100% {
+    transform:
+      scale(1.09)
+      translate3d(
+        -0.35%,
+        -0.25%,
+        0
+      );
+  }
+
+}
+
+
+/* ==============================================
+   THREE LAYER
+   ============================================== */
+
+.three-layer {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 1;
+
   pointer-events: none;
 }
+
 
 #aion-canvas {
   display: block;
@@ -84,324 +141,587 @@ a {
 }
 
 
-/* =========================================
-   ATMOSPHERE
-   ========================================= */
+/* ==============================================
+   GOLD HAZE
+   ============================================== */
 
-.atmosphere {
+.gold-haze {
   position: absolute;
 
   inset: 0;
+
+  z-index: 2;
+
+  pointer-events: none;
+
+  background:
+
+    radial-gradient(
+      circle at 52% 45%,
+      rgba(
+        200,
+        161,
+        90,
+        0.08
+      ),
+      transparent 32%
+    ),
+
+    radial-gradient(
+      circle at 35% 35%,
+      rgba(
+        224,
+        189,
+        120,
+        0.04
+      ),
+      transparent 30%
+    );
+}
+
+
+/* ==============================================
+   VIGNETTE
+   ============================================== */
+
+.vignette {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 3;
 
   pointer-events: none;
 
   background:
     radial-gradient(
-      circle at 50% 45%,
-      transparent 0%,
-      rgba(8, 10, 13, 0.15) 35%,
-      rgba(8, 10, 13, 0.72) 75%,
-      rgba(8, 10, 13, 0.96) 100%
+      circle,
+      transparent 25%,
+      rgba(
+        0,
+        0,
+        0,
+        0.2
+      ) 55%,
+      rgba(
+        0,
+        0,
+        0,
+        0.8
+      ) 100%
     );
 
-  z-index: 1;
+  box-shadow:
+    inset 0 0 180px
+    rgba(
+      0,
+      0,
+      0,
+      0.85
+    );
 }
 
 
-/* =========================================
+/* ==============================================
+   HEADER
+   ============================================== */
+
+.header {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+
+  z-index: 10;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding:
+    2rem
+    3.5rem;
+}
+
+
+.header-logo {
+  font-size: 0.95rem;
+
+  letter-spacing: 0.7em;
+
+  margin-left: 0.7em;
+
+  color:
+    rgba(
+      238,
+      233,
+      223,
+      0.9
+    );
+}
+
+
+.header nav {
+  display: flex;
+
+  gap: 3rem;
+}
+
+
+.header nav a {
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size: 0.55rem;
+
+  letter-spacing: 0.4em;
+
+  color:
+    rgba(
+      238,
+      233,
+      223,
+      0.7
+    );
+
+  transition:
+    color 250ms ease;
+}
+
+
+.header nav a:hover {
+  color:
+    var(--gold-bright);
+}
+
+
+/* ==============================================
    HERO
-   ========================================= */
+   ============================================== */
 
 .hero {
   position: relative;
 
-  z-index: 2;
+  z-index: 5;
 
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
 
   display: flex;
 
   align-items: center;
   justify-content: center;
 
-  padding: 4rem 1.5rem;
+  text-align: center;
+
+  padding: 5rem 1.5rem;
 }
 
 
-/* =========================================
-   CONTENT
-   ========================================= */
-
 .hero-content {
-  width: min(90%, 1000px);
+  width: min(
+    90%,
+    900px
+  );
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
-
-  text-align: center;
 }
 
 
-/* =========================================
-   BRAND
-   ========================================= */
+/* ==============================================
+   TITLE
+   ============================================== */
 
-.brand {
-  color: var(--accent);
-
-  font-size: clamp(
-    1.2rem,
-    2vw,
-    1.8rem
-  );
-
-  font-weight: 500;
-
-  letter-spacing: 0.65em;
-
-  margin-left: 0.65em;
-
-  text-shadow:
-    0 0 25px
-    rgba(200, 161, 90, 0.2);
-}
-
-
-/* =========================================
-   MAIN TEXT
-   ========================================= */
-
-.hero-text {
-  margin-top: 3.5rem;
-}
-
-.hero-text h1 {
+.hero-title h1 {
   margin: 0;
 
-  color: var(--foreground);
+  color: var(--text);
 
-  font-size: clamp(
-    3rem,
-    7vw,
-    6.5rem
-  );
+  font-size:
+    clamp(
+      4rem,
+      8vw,
+      8rem
+    );
 
   font-weight: 400;
 
-  line-height: 0.98;
+  line-height: 0.85;
 
-  letter-spacing: -0.04em;
+  letter-spacing:
+    0.18em;
 
-  text-transform: uppercase;
+  margin-left: 0.18em;
 
   text-shadow:
-    0 2px 30px
-    rgba(0, 0, 0, 0.7);
+    0 5px 40px
+    rgba(
+      0,
+      0,
+      0,
+      0.85
+    );
 }
 
 
-/* =========================================
-   TAGLINE
-   ========================================= */
+.hero-title h2 {
+  margin:
+    2rem
+    0
+    0;
 
-.tagline {
-  margin: 2rem 0 0;
+  font-size:
+    clamp(
+      2.5rem,
+      5vw,
+      5.5rem
+    );
 
-  color: var(--muted);
+  font-weight: 400;
 
-  font-size: clamp(
-    1rem,
-    1.5vw,
-    1.25rem
-  );
+  line-height: 0.95;
 
-  letter-spacing: 0.08em;
+  letter-spacing:
+    -0.04em;
+
+  text-transform:
+    uppercase;
+
+  text-shadow:
+    0 5px 35px
+    rgba(
+      0,
+      0,
+      0,
+      0.8
+    );
 }
 
 
-/* =========================================
-   DOMAINS
-   ========================================= */
+.hero-title p {
+  margin:
+    1.8rem
+    0
+    0;
 
-.domains {
-  margin: 2.5rem 0 0;
+  color:
+    rgba(
+      238,
+      233,
+      223,
+      0.7
+    );
 
-  color: #aaa59b;
+  font-size:
+    clamp(
+      0.8rem,
+      1.2vw,
+      1rem
+    );
 
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
-
-  font-size: 0.7rem;
-
-  letter-spacing: 0.15em;
-
-  text-transform: uppercase;
+  letter-spacing:
+    0.18em;
 }
 
-.domains span {
-  margin: 0 0.7rem;
 
-  color: var(--accent);
-}
-
-
-/* =========================================
+/* ==============================================
    ENTER BUTTON
-   ========================================= */
+   ============================================== */
 
 .enter-button {
-  margin-top: 4rem;
+  position: relative;
 
-  min-width: 290px;
+  margin-top: 3rem;
 
-  padding: 1.1rem 1.5rem;
+  width: 430px;
 
-  display: inline-flex;
+  max-width: 90vw;
+
+  padding:
+    1.25rem
+    1.5rem;
+
+  display: flex;
 
   align-items: center;
   justify-content: center;
 
-  gap: 1.5rem;
+  gap: 2rem;
 
-  border: 1px solid var(--border);
+  border:
+    1px solid
+    rgba(
+      224,
+      189,
+      120,
+      0.7
+    );
 
-  color: var(--foreground);
+  background:
+    rgba(
+      5,
+      6,
+      7,
+      0.3
+    );
+
+  backdrop-filter:
+    blur(5px);
 
   font-family:
     Arial,
     Helvetica,
     sans-serif;
 
-  font-size: 0.72rem;
+  font-size:
+    0.6rem;
 
-  letter-spacing: 0.16em;
+  letter-spacing:
+    0.32em;
 
-  text-transform: uppercase;
-
-  background:
-    rgba(8, 10, 13, 0.15);
-
-  backdrop-filter:
-    blur(4px);
+  text-transform:
+    uppercase;
 
   transition:
-    border-color 250ms ease,
-    background-color 250ms ease,
-    transform 250ms ease,
-    box-shadow 250ms ease;
+    transform 300ms ease,
+    background 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
 }
+
 
 .enter-button:hover {
-  border-color:
-    var(--border-hover);
-
-  background:
-    rgba(200, 161, 90, 0.06);
 
   transform:
-    translateY(-2px);
+    translateY(-3px);
+
+  background:
+    rgba(
+      200,
+      161,
+      90,
+      0.08
+    );
+
+  border-color:
+    var(--gold-bright);
 
   box-shadow:
-    0 10px 40px
-    rgba(0, 0, 0, 0.25);
+    0 0 40px
+    rgba(
+      200,
+      161,
+      90,
+      0.12
+    );
 }
 
-
-/* =========================================
-   ARROW
-   ========================================= */
 
 .arrow {
-  color: var(--accent);
+  color:
+    var(--gold-bright);
 
-  font-size: 1.1rem;
+  font-size:
+    1.2rem;
 
   transition:
-    transform 250ms ease;
+    transform 300ms ease;
 }
+
 
 .enter-button:hover .arrow {
   transform:
-    translateX(6px);
+    translateX(8px);
 }
 
 
-/* =========================================
-   MOTTO
-   ========================================= */
+/* ==============================================
+   DOMAINS
+   ============================================== */
 
-.motto {
-  margin: 3.5rem 0 0;
+.domains {
+  margin-top: 4rem;
 
-  color: #68665f;
+  display: flex;
 
-  font-size: 0.8rem;
+  align-items: center;
 
-  font-style: italic;
+  gap: 1rem;
 
-  letter-spacing: 0.06em;
+  color:
+    rgba(
+      238,
+      233,
+      223,
+      0.48
+    );
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  font-size:
+    0.52rem;
+
+  letter-spacing:
+    0.38em;
+
+  text-transform:
+    uppercase;
 }
 
 
-/* =========================================
+.domains i {
+  color:
+    var(--gold);
+
+  font-style:
+    normal;
+}
+
+
+/* ==============================================
+   SCROLL
+   ============================================== */
+
+.scroll {
+  position: absolute;
+
+  bottom: 2rem;
+
+  left: 50%;
+
+  z-index: 10;
+
+  transform:
+    translateX(-50%);
+}
+
+
+.scroll span {
+  display: block;
+
+  width: 1px;
+
+  height: 45px;
+
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      var(--gold)
+    );
+
+  animation:
+    scroll-pulse
+    2s
+    ease-in-out
+    infinite;
+}
+
+
+@keyframes scroll-pulse {
+
+  0%,
+  100% {
+    opacity: 0.3;
+
+    transform:
+      scaleY(0.6);
+  }
+
+  50% {
+    opacity: 1;
+
+    transform:
+      scaleY(1);
+  }
+
+}
+
+
+/* ==============================================
    MOBILE
-   ========================================= */
+   ============================================== */
 
-@media (max-width: 700px) {
+@media (max-width: 800px) {
 
-  .hero {
-    padding: 3rem 1rem;
+  .home {
+    min-height: 650px;
   }
 
-  .hero-content {
-    width: 92%;
+
+  .header {
+    padding:
+      1.5rem;
   }
 
-  .hero-text {
-    margin-top: 3rem;
+
+  .header nav {
+    display: none;
   }
 
-  .hero-text h1 {
+
+  .hero-title h1 {
     font-size:
       clamp(
-        2.5rem,
-        12vw,
+        3rem,
+        17vw,
+        5rem
+      );
+  }
+
+
+  .hero-title h2 {
+    font-size:
+      clamp(
+        2.2rem,
+        10vw,
         4rem
       );
-
-    line-height: 1;
   }
 
-  .tagline {
-    margin-top: 1.5rem;
 
-    font-size: 0.9rem;
+  .hero-title p {
+    font-size:
+      0.72rem;
+
+    letter-spacing:
+      0.12em;
   }
 
-  .domains {
-    max-width: 320px;
-
-    line-height: 2;
-  }
-
-  .domains span {
-    margin: 0 0.35rem;
-  }
 
   .enter-button {
     width: 100%;
 
-    min-width: 0;
+    font-size:
+      0.52rem;
 
-    margin-top: 3rem;
+    letter-spacing:
+      0.22em;
   }
 
-  .motto {
+
+  .domains {
+    max-width: 90vw;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    line-height: 2;
+
     margin-top: 2.5rem;
   }
+
 }

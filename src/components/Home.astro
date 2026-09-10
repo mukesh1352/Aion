@@ -1,74 +1,106 @@
 <section class="home">
-  <!-- 3D background -->
-  <div class="scene" aria-hidden="true">
+  <!-- =========================================================
+       CINEMATIC KRONOS ARTWORK
+       ========================================================= -->
+  <div class="hero-image" aria-hidden="true">
+    <img
+      src="/images/aion-hero.png"
+      alt=""
+    />
+  </div>
+
+  <!-- =========================================================
+       THREE.JS ATMOSPHERE
+       ========================================================= -->
+  <div class="three-layer" aria-hidden="true">
     <canvas id="aion-canvas"></canvas>
   </div>
 
-  <!-- Dark atmospheric overlay -->
-  <div class="atmosphere" aria-hidden="true"></div>
+  <!-- Atmospheric layers -->
+  <div class="gold-haze" aria-hidden="true"></div>
+  <div class="center-glow" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
 
-  <!-- Actual content -->
+  <!-- =========================================================
+       HEADER
+       ========================================================= -->
+  <header class="header">
+    <a href="/" class="header-logo" aria-label="AION Home">
+      A I O N
+    </a>
+
+    <nav aria-label="Main navigation">
+      <a href="/map">MAP</a>
+      <a href="/timeline">TIMELINE</a>
+      <a href="/library">LIBRARY</a>
+      <a href="/about">ABOUT</a>
+    </nav>
+  </header>
+
+  <!-- =========================================================
+       HERO
+       ========================================================= -->
   <main class="hero">
     <div class="hero-content">
 
-      <div class="brand">
-        A I O N
-      </div>
+      <div class="hero-title">
+        <h1>AION</h1>
 
-      <div class="hero-text">
-        <h1>
-          Explore Humanity
-          <br />
+        <h2>
+          Explore Humanity<br />
           Through Time
-        </h1>
+        </h2>
 
-        <p class="tagline">
+        <p>
           The world, across the ages.
         </p>
       </div>
 
-      <p class="domains">
-        History
-        <span>·</span>
-        Mythology
-        <span>·</span>
-        Civilizations
-        <span>·</span>
-        People
-        <span>·</span>
-        Stories
-      </p>
-
       <a href="/map" class="enter-button">
         <span>Enter the Historic World</span>
-
-        <span class="arrow">
-          →
-        </span>
+        <span class="arrow">→</span>
       </a>
 
-      <p class="motto">
-        Where time becomes a map.
-      </p>
+      <div class="domains">
+        <span>History</span>
+        <i>·</i>
+        <span>Mythology</span>
+        <i>·</i>
+        <span>Civilizations</span>
+        <i>·</i>
+        <span>People</span>
+        <i>·</i>
+        <span>Stories</span>
+      </div>
 
     </div>
   </main>
+
+  <!-- =========================================================
+       SCROLL INDICATOR
+       ========================================================= -->
+  <div class="scroll" aria-hidden="true">
+    <span></span>
+  </div>
 </section>
 
+
+<!-- =============================================================
+     THREE.JS
+     ============================================================= -->
 
 <script>
   import * as THREE from "three";
 
-  const canvas = document.querySelector(
-    "#aion-canvas"
-  ) as HTMLCanvasElement | null;
+  const canvas = document.getElementById(
+    "aion-canvas"
+  );
 
-  if (canvas) {
-    /*
-     * -----------------------------------------
-     * SCENE
-     * -----------------------------------------
-     */
+  if (canvas instanceof HTMLCanvasElement) {
+
+    /* ---------------------------------------------------------
+       SCENE
+       --------------------------------------------------------- */
 
     const scene = new THREE.Scene();
 
@@ -79,19 +111,18 @@
       100
     );
 
-    camera.position.z = 7;
+    camera.position.z = 8;
 
 
-    /*
-     * -----------------------------------------
-     * RENDERER
-     * -----------------------------------------
-     */
+    /* ---------------------------------------------------------
+       RENDERER
+       --------------------------------------------------------- */
 
     const renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
       alpha: true,
+      antialias: true,
+      powerPreference: "high-performance",
     });
 
     renderer.setPixelRatio(
@@ -104,84 +135,28 @@
     );
 
 
-    /*
-     * -----------------------------------------
-     * MAIN GLOBE
-     * -----------------------------------------
-     */
+    /* ---------------------------------------------------------
+       WORLD
+       --------------------------------------------------------- */
 
-    const globeGroup = new THREE.Group();
+    const world = new THREE.Group();
 
-    scene.add(globeGroup);
+    scene.add(world);
 
 
-    /*
-     * Wireframe globe
-     */
+    /* =========================================================
+       STAR PARTICLES
+       ========================================================= */
 
-    const globeGeometry =
-      new THREE.SphereGeometry(2.05, 48, 32);
-
-    const globeWireframe =
-      new THREE.WireframeGeometry(globeGeometry);
-
-    const globeMaterial =
-      new THREE.LineBasicMaterial({
-        color: 0xc8a15a,
-        transparent: true,
-        opacity: 0.13,
-      });
-
-    const globe =
-      new THREE.LineSegments(
-        globeWireframe,
-        globeMaterial
-      );
-
-    globeGroup.add(globe);
-
-
-    /*
-     * -----------------------------------------
-     * INNER GLOBE
-     * -----------------------------------------
-     */
-
-    const innerGeometry =
-      new THREE.SphereGeometry(1.96, 48, 32);
-
-    const innerMaterial =
-      new THREE.MeshBasicMaterial({
-        color: 0x10151c,
-        transparent: true,
-        opacity: 0.22,
-      });
-
-    const innerGlobe =
-      new THREE.Mesh(
-        innerGeometry,
-        innerMaterial
-      );
-
-    globeGroup.add(innerGlobe);
-
-
-    /*
-     * -----------------------------------------
-     * PARTICLE SPHERE
-     * -----------------------------------------
-     */
-
-    const particleCount = 1400;
+    const particleCount = 1800;
 
     const particlePositions =
-      new Float32Array(
-        particleCount * 3
-      );
+      new Float32Array(particleCount * 3);
 
     for (let i = 0; i < particleCount; i++) {
 
-      const radius = 2.25;
+      const radius =
+        3.5 + Math.random() * 7;
 
       const theta =
         Math.random() * Math.PI * 2;
@@ -191,23 +166,19 @@
           2 * Math.random() - 1
         );
 
-      const x =
+      particlePositions[i * 3] =
         radius *
         Math.sin(phi) *
         Math.cos(theta);
 
-      const y =
+      particlePositions[i * 3 + 1] =
         radius *
         Math.cos(phi);
 
-      const z =
+      particlePositions[i * 3 + 2] =
         radius *
         Math.sin(phi) *
         Math.sin(theta);
-
-      particlePositions[i * 3] = x;
-      particlePositions[i * 3 + 1] = y;
-      particlePositions[i * 3 + 2] = z;
     }
 
     const particleGeometry =
@@ -223,10 +194,11 @@
 
     const particleMaterial =
       new THREE.PointsMaterial({
-        color: 0xc8a15a,
+        color: 0xd8b56c,
         size: 0.012,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.4,
+        depthWrite: false,
       });
 
     const particles =
@@ -235,176 +207,235 @@
         particleMaterial
       );
 
-    globeGroup.add(particles);
+    world.add(particles);
 
 
-    /*
-     * -----------------------------------------
-     * TIME RINGS
-     * -----------------------------------------
-     */
+    /* =========================================================
+       ASTROLABE / ORBITAL RINGS
+       ========================================================= */
 
-    const ringMaterial =
-      new THREE.MeshBasicMaterial({
-        color: 0xc8a15a,
-        transparent: true,
-        opacity: 0.16,
-        wireframe: true,
-      });
+    type RingData = {
+      mesh: THREE.Mesh;
+      speed: number;
+    };
+
+    const rings: RingData[] = [];
 
 
-    /*
-     * Ring 1
-     */
+    function createRing(
+      radius: number,
+      rotation: THREE.Euler,
+      speed: number,
+      opacity: number,
+      thickness = 0.008
+    ) {
 
-    const ringGeometry1 =
-      new THREE.TorusGeometry(
-        2.65,
-        0.008,
-        8,
-        160
-      );
-
-    const ring1 =
-      new THREE.Mesh(
-        ringGeometry1,
-        ringMaterial
-      );
-
-    ring1.rotation.x =
-      Math.PI * 0.25;
-
-    ring1.rotation.z =
-      Math.PI * 0.15;
-
-    globeGroup.add(ring1);
-
-
-    /*
-     * Ring 2
-     */
-
-    const ringGeometry2 =
-      new THREE.TorusGeometry(
-        2.85,
-        0.006,
-        8,
-        160
-      );
-
-    const ring2 =
-      new THREE.Mesh(
-        ringGeometry2,
-        ringMaterial
-      );
-
-    ring2.rotation.x =
-      Math.PI * 0.75;
-
-    ring2.rotation.y =
-      Math.PI * 0.15;
-
-    globeGroup.add(ring2);
-
-
-    /*
-     * Ring 3
-     */
-
-    const ringGeometry3 =
-      new THREE.TorusGeometry(
-        3.05,
-        0.004,
-        8,
-        160
-      );
-
-    const ring3 =
-      new THREE.Mesh(
-        ringGeometry3,
-        ringMaterial
-      );
-
-    ring3.rotation.y =
-      Math.PI * 0.5;
-
-    ring3.rotation.z =
-      Math.PI * 0.3;
-
-    globeGroup.add(ring3);
-
-
-    /*
-     * -----------------------------------------
-     * CENTRAL POINT
-     * -----------------------------------------
-     */
-
-    const pointGeometry =
-      new THREE.SphereGeometry(
-        0.035,
-        16,
-        16
-      );
-
-    const pointMaterial =
-      new THREE.MeshBasicMaterial({
-        color: 0xc8a15a,
-      });
-
-    const point =
-      new THREE.Mesh(
-        pointGeometry,
-        pointMaterial
-      );
-
-    point.position.set(
-      0.9,
-      0.75,
-      1.7
-    );
-
-    globeGroup.add(point);
-
-
-    /*
-     * -----------------------------------------
-     * SECONDARY POINTS
-     * -----------------------------------------
-     */
-
-    const locations = [
-      [-0.9, 0.5, 1.7],
-      [0.3, -1.1, 1.7],
-      [-1.2, -0.7, 1.45],
-      [1.1, -0.25, 1.7],
-    ];
-
-    locations.forEach(
-      ([x, y, z]) => {
-
-        const marker =
-          new THREE.Mesh(
-            pointGeometry,
-            pointMaterial
-          );
-
-        marker.position.set(
-          x,
-          y,
-          z
+      const geometry =
+        new THREE.TorusGeometry(
+          radius,
+          thickness,
+          8,
+          280
         );
 
-        globeGroup.add(marker);
-      }
+      const material =
+        new THREE.MeshBasicMaterial({
+          color: 0xc8a15a,
+          transparent: true,
+          opacity,
+          depthWrite: false,
+        });
+
+      const mesh =
+        new THREE.Mesh(
+          geometry,
+          material
+        );
+
+      mesh.rotation.copy(rotation);
+
+      world.add(mesh);
+
+      rings.push({
+        mesh,
+        speed,
+      });
+    }
+
+
+    createRing(
+      2.7,
+      new THREE.Euler(
+        Math.PI * 0.24,
+        0,
+        0
+      ),
+      0.0007,
+      0.24
     );
 
 
-    /*
-     * -----------------------------------------
-     * MOUSE PARALLAX
-     * -----------------------------------------
-     */
+    createRing(
+      3.15,
+      new THREE.Euler(
+        Math.PI * 0.62,
+        Math.PI * 0.15,
+        0
+      ),
+      -0.0005,
+      0.17
+    );
+
+
+    createRing(
+      3.55,
+      new THREE.Euler(
+        Math.PI * 0.15,
+        Math.PI * 0.5,
+        Math.PI * 0.25
+      ),
+      0.0003,
+      0.12
+    );
+
+
+    createRing(
+      4.1,
+      new THREE.Euler(
+        Math.PI * 0.72,
+        Math.PI * 0.2,
+        Math.PI * 0.1
+      ),
+      -0.0002,
+      0.08,
+      0.006
+    );
+
+
+    /* =========================================================
+       ORBITING GOLD PARTICLES
+       ========================================================= */
+
+    const lightGeometry =
+      new THREE.SphereGeometry(
+        0.025,
+        12,
+        12
+      );
+
+    const lightMaterial =
+      new THREE.MeshBasicMaterial({
+        color: 0xe0bd78,
+      });
+
+
+    type Orbiter = {
+      mesh: THREE.Mesh;
+      angle: number;
+      radius: number;
+      speed: number;
+      y: number;
+      phase: number;
+    };
+
+
+    const orbiters: Orbiter[] = [];
+
+
+    for (let i = 0; i < 10; i++) {
+
+      const mesh =
+        new THREE.Mesh(
+          lightGeometry,
+          lightMaterial
+        );
+
+      const orbiter: Orbiter = {
+        mesh,
+        angle:
+          Math.random() *
+          Math.PI *
+          2,
+        radius:
+          2.5 +
+          Math.random() * 1.8,
+        speed:
+          0.08 +
+          Math.random() * 0.2,
+        y:
+          -1.3 +
+          Math.random() * 2.6,
+        phase:
+          Math.random() *
+          Math.PI *
+          2,
+      };
+
+      orbiters.push(orbiter);
+
+      world.add(mesh);
+    }
+
+
+    /* =========================================================
+       COSMIC DUST
+       ========================================================= */
+
+    const dustCount = 350;
+
+    const dustPositions =
+      new Float32Array(
+        dustCount * 3
+      );
+
+
+    for (let i = 0; i < dustCount; i++) {
+
+      dustPositions[i * 3] =
+        (Math.random() - 0.5) * 12;
+
+      dustPositions[i * 3 + 1] =
+        (Math.random() - 0.5) * 7;
+
+      dustPositions[i * 3 + 2] =
+        (Math.random() - 0.5) * 7;
+    }
+
+
+    const dustGeometry =
+      new THREE.BufferGeometry();
+
+    dustGeometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(
+        dustPositions,
+        3
+      )
+    );
+
+
+    const dustMaterial =
+      new THREE.PointsMaterial({
+        color: 0xbda06b,
+        size: 0.015,
+        transparent: true,
+        opacity: 0.28,
+        depthWrite: false,
+      });
+
+
+    const dust =
+      new THREE.Points(
+        dustGeometry,
+        dustMaterial
+      );
+
+    scene.add(dust);
+
+
+    /* =========================================================
+       MOUSE PARALLAX
+       ========================================================= */
 
     let mouseX = 0;
     let mouseY = 0;
@@ -412,64 +443,63 @@
     let targetX = 0;
     let targetY = 0;
 
+
     window.addEventListener(
       "mousemove",
       (event) => {
 
         mouseX =
-          (event.clientX /
-            window.innerWidth) *
-            2 -
-          1;
+          event.clientX /
+            window.innerWidth -
+          0.5;
 
         mouseY =
-          (event.clientY /
-            window.innerHeight) *
-            2 -
-          1;
+          event.clientY /
+            window.innerHeight -
+          0.5;
       }
     );
 
 
-    /*
-     * -----------------------------------------
-     * RESIZE
-     * -----------------------------------------
-     */
+    /* =========================================================
+       RESIZE
+       ========================================================= */
+
+    function handleResize() {
+
+      camera.aspect =
+        window.innerWidth /
+        window.innerHeight;
+
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(
+        window.innerWidth,
+        window.innerHeight
+      );
+
+      renderer.setPixelRatio(
+        Math.min(
+          window.devicePixelRatio,
+          2
+        )
+      );
+    }
+
 
     window.addEventListener(
       "resize",
-      () => {
-
-        camera.aspect =
-          window.innerWidth /
-          window.innerHeight;
-
-        camera.updateProjectionMatrix();
-
-        renderer.setSize(
-          window.innerWidth,
-          window.innerHeight
-        );
-
-        renderer.setPixelRatio(
-          Math.min(
-            window.devicePixelRatio,
-            2
-          )
-        );
-      }
+      handleResize
     );
 
 
-    /*
-     * -----------------------------------------
-     * ANIMATION
-     * -----------------------------------------
-     */
+    /* =========================================================
+       ANIMATION
+       ========================================================= */
 
     const clock =
       new THREE.Clock();
+
 
     function animate() {
 
@@ -477,76 +507,114 @@
         animate
       );
 
-      const elapsed =
+      const time =
         clock.getElapsedTime();
 
 
-      /*
-       * Globe rotation
-       */
-
-      globe.rotation.y =
-        elapsed * 0.055;
+      /* Stars */
 
       particles.rotation.y =
-        elapsed * 0.065;
+        time * 0.012;
+
+      particles.rotation.x =
+        Math.sin(
+          time * 0.12
+        ) * 0.018;
 
 
-      /*
-       * Rings rotate differently
-       */
+      /* Rings */
 
-      ring1.rotation.z +=
-        0.0008;
+      rings.forEach(
+        (ring) => {
 
-      ring2.rotation.x +=
-        0.0005;
+          ring.mesh.rotation.z +=
+            ring.speed;
 
-      ring3.rotation.y +=
-        0.0004;
+          ring.mesh.rotation.y +=
+            ring.speed * 0.35;
+        }
+      );
 
 
-      /*
-       * Gentle breathing effect
-       */
+      /* Orbiting lights */
+
+      orbiters.forEach(
+        (orbiter) => {
+
+          orbiter.angle +=
+            orbiter.speed * 0.004;
+
+          orbiter.mesh.position.x =
+            Math.cos(
+              orbiter.angle
+            ) *
+            orbiter.radius;
+
+          orbiter.mesh.position.z =
+            Math.sin(
+              orbiter.angle
+            ) *
+            orbiter.radius;
+
+          orbiter.mesh.position.y =
+            orbiter.y +
+            Math.sin(
+              time * 0.6 +
+              orbiter.phase
+            ) *
+            0.08;
+        }
+      );
+
+
+      /* Dust */
+
+      dust.rotation.y =
+        time * 0.006;
+
+      dust.rotation.x =
+        Math.sin(
+          time * 0.1
+        ) * 0.015;
+
+
+      /* Mouse movement */
+
+      targetX =
+        mouseX * 0.28;
+
+      targetY =
+        mouseY * 0.16;
+
+
+      world.rotation.y +=
+        (
+          targetX -
+          world.rotation.y
+        ) * 0.008;
+
+
+      world.rotation.x +=
+        (
+          -targetY -
+          world.rotation.x
+        ) * 0.008;
+
+
+      /* Very subtle breathing */
 
       const scale =
         1 +
-        Math.sin(elapsed * 0.7) *
-        0.012;
+        Math.sin(
+          time * 0.35
+        ) *
+        0.008;
 
-      globeGroup.scale.set(
+      world.scale.set(
         scale,
         scale,
         scale
       );
-
-
-      /*
-       * Mouse movement
-       */
-
-      targetX = mouseX * 0.18;
-      targetY = mouseY * 0.12;
-
-      globeGroup.rotation.y +=
-        (targetX -
-          globeGroup.rotation.y) *
-        0.015;
-
-      globeGroup.rotation.x +=
-        (-targetY -
-          globeGroup.rotation.x) *
-        0.015;
-
-
-      /*
-       * Tiny floating motion
-       */
-
-      globeGroup.position.y =
-        Math.sin(elapsed * 0.45) *
-        0.035;
 
 
       renderer.render(
@@ -555,6 +623,823 @@
       );
     }
 
+
     animate();
   }
 </script>
+
+
+<style>
+  /* =========================================================
+     BASE
+     ========================================================= */
+
+  .home {
+    position: relative;
+    width: 100%;
+    height: 100svh;
+    min-height: 650px;
+    overflow: hidden;
+    background: #050607;
+    color: #e8e3d8;
+  }
+
+
+  /* =========================================================
+     KRONOS ARTWORK
+     ========================================================= */
+
+  .hero-image {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background: #050607;
+  }
+
+
+  .hero-image img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    /*
+     * Slightly lower framing gives the Earth more room
+     * at the bottom while keeping Kronos dominant.
+     */
+    object-position: center center;
+
+    transform:
+      scale(1.045)
+      translateY(1%);
+
+    filter:
+      brightness(0.78)
+      contrast(1.12)
+      saturate(0.78);
+
+    animation:
+      cinematic-breath 24s
+      ease-in-out
+      infinite alternate;
+  }
+
+
+  @keyframes cinematic-breath {
+
+    from {
+      transform:
+        scale(1.045)
+        translateY(1%);
+    }
+
+    to {
+      transform:
+        scale(1.075)
+        translateY(0%);
+    }
+  }
+
+
+  /* =========================================================
+     THREE.JS LAYER
+     ========================================================= */
+
+  .three-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+
+  #aion-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+
+  /* =========================================================
+     GOLD ATMOSPHERE
+     ========================================================= */
+
+  .gold-haze {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    pointer-events: none;
+
+    background:
+      radial-gradient(
+        ellipse at 50% 52%,
+        rgba(190, 145, 65, 0.08) 0%,
+        rgba(150, 105, 40, 0.035) 28%,
+        transparent 58%
+      );
+
+    mix-blend-mode: screen;
+  }
+
+
+  .center-glow {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 46%;
+
+    width: 700px;
+    height: 400px;
+
+    transform:
+      translate(-50%, -50%);
+
+    pointer-events: none;
+
+    background:
+      radial-gradient(
+        ellipse,
+        rgba(220, 183, 110, 0.075),
+        transparent 70%
+      );
+
+    filter: blur(30px);
+  }
+
+
+  /* =========================================================
+     VIGNETTE
+     ========================================================= */
+
+  .vignette {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+
+    background:
+      radial-gradient(
+        ellipse at center,
+        transparent 35%,
+        rgba(0, 0, 0, 0.18) 58%,
+        rgba(0, 0, 0, 0.68) 100%
+      );
+
+    box-shadow:
+      inset 0 0 180px rgba(0, 0, 0, 0.75);
+  }
+
+
+  /* =========================================================
+     HEADER
+     ========================================================= */
+
+  .header {
+    position: absolute;
+    z-index: 10;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 100px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding:
+      0 5vw;
+
+    pointer-events: none;
+  }
+
+
+  .header-logo {
+    color: #e8e3d8;
+    text-decoration: none;
+
+    font-family:
+      Georgia,
+      "Times New Roman",
+      serif;
+
+    font-size: 18px;
+    font-weight: 500;
+
+    letter-spacing: 0.65em;
+
+    pointer-events: auto;
+  }
+
+
+  .header nav {
+    display: flex;
+    align-items: center;
+
+    gap: clamp(
+      28px,
+      4vw,
+      64px
+    );
+
+    pointer-events: auto;
+  }
+
+
+  .header nav a {
+    position: relative;
+
+    color: rgba(
+      232,
+      227,
+      216,
+      0.78
+    );
+
+    text-decoration: none;
+
+    font-family:
+      Arial,
+      Helvetica,
+      sans-serif;
+
+    font-size: 10px;
+
+    letter-spacing: 0.38em;
+
+    transition:
+      color 250ms ease;
+  }
+
+
+  .header nav a::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    right: 0;
+    bottom: -8px;
+
+    height: 1px;
+
+    background: #c8a15a;
+
+    transform:
+      scaleX(0);
+
+    transform-origin:
+      center;
+
+    transition:
+      transform 250ms ease;
+  }
+
+
+  .header nav a:hover {
+    color: #e8e3d8;
+  }
+
+
+  .header nav a:hover::after {
+    transform:
+      scaleX(1);
+  }
+
+
+  /* =========================================================
+     HERO CONTENT
+     ========================================================= */
+
+  .hero {
+    position: relative;
+    z-index: 5;
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+  }
+
+
+  .hero-content {
+    width: min(
+      900px,
+      90vw
+    );
+
+    margin-top: 3vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+
+  /* =========================================================
+     TITLE
+     ========================================================= */
+
+  .hero-title h1 {
+    margin: 0;
+
+    font-family:
+      Georgia,
+      "Times New Roman",
+      serif;
+
+    font-size:
+      clamp(
+        72px,
+        8.5vw,
+        138px
+      );
+
+    font-weight: 500;
+
+    line-height: 0.85;
+
+    letter-spacing:
+      0.16em;
+
+    text-indent:
+      0.16em;
+
+    color: #eee9df;
+
+    text-shadow:
+      0 2px 30px
+      rgba(0, 0, 0, 0.55);
+  }
+
+
+  .hero-title h2 {
+    margin:
+
+      clamp(35px, 4vw, 52px)
+
+      0
+
+      0;
+
+    font-family:
+      Georgia,
+      "Times New Roman",
+      serif;
+
+    font-size:
+      clamp(
+        38px,
+        4.3vw,
+        67px
+      );
+
+    font-weight: 600;
+
+    line-height: 0.98;
+
+    letter-spacing:
+      -0.035em;
+
+    color: #eee9df;
+
+    text-shadow:
+      0 2px 25px
+      rgba(0, 0, 0, 0.65);
+  }
+
+
+  .hero-title p {
+    margin:
+      32px 0 0;
+
+    font-family:
+      Georgia,
+      "Times New Roman",
+      serif;
+
+    font-size:
+      clamp(
+        15px,
+        1.2vw,
+        20px
+      );
+
+    letter-spacing:
+      0.14em;
+
+    color:
+      rgba(
+        232,
+        227,
+        216,
+        0.75
+      );
+  }
+
+
+  /* =========================================================
+     ENTER BUTTON
+     ========================================================= */
+
+  .enter-button {
+    position: relative;
+
+    width:
+      min(
+        525px,
+        78vw
+      );
+
+    height: 78px;
+
+    margin-top:
+      clamp(
+        48px,
+        5vw,
+        70px
+      );
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 30px;
+
+    border:
+      1px solid
+      rgba(
+        200,
+        161,
+        90,
+        0.72
+      );
+
+    background:
+      rgba(
+        5,
+        6,
+        7,
+        0.38
+      );
+
+    backdrop-filter:
+      blur(5px);
+
+    color: #e8e3d8;
+
+    text-decoration: none;
+
+    font-family:
+      Arial,
+      Helvetica,
+      sans-serif;
+
+    font-size: 11px;
+
+    font-weight: 500;
+
+    letter-spacing:
+      0.34em;
+
+    text-transform:
+      uppercase;
+
+    transition:
+      background 300ms ease,
+      border-color 300ms ease,
+      transform 300ms ease,
+      box-shadow 300ms ease;
+  }
+
+
+  .enter-button::before {
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+      linear-gradient(
+        90deg,
+        transparent,
+        rgba(
+          200,
+          161,
+          90,
+          0.08
+        ),
+        transparent
+      );
+
+    transform:
+      translateX(-100%);
+
+    transition:
+      transform 650ms ease;
+  }
+
+
+  .enter-button:hover {
+    background:
+      rgba(
+        200,
+        161,
+        90,
+        0.08
+      );
+
+    border-color:
+      rgba(
+        220,
+        183,
+        110,
+        0.95
+      );
+
+    box-shadow:
+      0 0 35px
+      rgba(
+        200,
+        161,
+        90,
+        0.12
+      );
+
+    transform:
+      translateY(-2px);
+  }
+
+
+  .enter-button:hover::before {
+    transform:
+      translateX(100%);
+  }
+
+
+  .enter-button .arrow {
+    color: #d6ad61;
+
+    font-size: 22px;
+
+    line-height: 1;
+
+    transition:
+      transform 300ms ease;
+  }
+
+
+  .enter-button:hover .arrow {
+    transform:
+      translateX(6px);
+  }
+
+
+  /* =========================================================
+     DOMAINS
+     ========================================================= */
+
+  .domains {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 18px;
+
+    margin-top: 42px;
+
+    color:
+      rgba(
+        232,
+        227,
+        216,
+        0.54
+      );
+
+    font-family:
+      Arial,
+      Helvetica,
+      sans-serif;
+
+    font-size: 9px;
+
+    letter-spacing:
+      0.38em;
+
+    text-transform:
+      uppercase;
+  }
+
+
+  .domains i {
+    font-style: normal;
+
+    color:
+      rgba(
+        200,
+        161,
+        90,
+        0.7
+      );
+  }
+
+
+  /* =========================================================
+     SCROLL
+     ========================================================= */
+
+  .scroll {
+    position: absolute;
+
+    z-index: 10;
+
+    bottom: 28px;
+    left: 50%;
+
+    transform:
+      translateX(-50%);
+
+    width: 1px;
+    height: 42px;
+
+    overflow: hidden;
+
+    background:
+      rgba(
+        232,
+        227,
+        216,
+        0.16
+      );
+  }
+
+
+  .scroll span {
+    display: block;
+
+    width: 1px;
+    height: 15px;
+
+    background: #c8a15a;
+
+    animation:
+      scroll-line
+      2.2s
+      ease-in-out
+      infinite;
+  }
+
+
+  @keyframes scroll-line {
+
+    0% {
+      transform:
+        translateY(-15px);
+
+      opacity: 0;
+    }
+
+    30% {
+      opacity: 1;
+    }
+
+    70% {
+      opacity: 1;
+    }
+
+    100% {
+      transform:
+        translateY(42px);
+
+      opacity: 0;
+    }
+  }
+
+
+  /* =========================================================
+     RESPONSIVE
+     ========================================================= */
+
+  @media (max-width: 768px) {
+
+    .home {
+      min-height: 600px;
+    }
+
+
+    .hero-image img {
+      object-position:
+        58% center;
+
+      transform:
+        scale(1.12)
+        translateY(1%);
+    }
+
+
+    .header {
+      height: 80px;
+
+      padding:
+        0 24px;
+    }
+
+
+    .header-logo {
+      font-size: 15px;
+    }
+
+
+    .header nav {
+      display: none;
+    }
+
+
+    .hero-content {
+      margin-top: 4vh;
+    }
+
+
+    .hero-title h1 {
+      font-size:
+        clamp(
+          58px,
+          16vw,
+          90px
+        );
+    }
+
+
+    .hero-title h2 {
+      margin-top: 28px;
+
+      font-size:
+        clamp(
+          30px,
+          8.5vw,
+          48px
+        );
+    }
+
+
+    .hero-title p {
+      margin-top: 25px;
+
+      font-size: 13px;
+
+      letter-spacing:
+        0.08em;
+    }
+
+
+    .enter-button {
+      width: 82vw;
+
+      height: 68px;
+
+      margin-top: 42px;
+
+      font-size: 9px;
+
+      letter-spacing:
+        0.25em;
+    }
+
+
+    .domains {
+      flex-wrap: wrap;
+
+      gap: 10px 12px;
+
+      max-width: 330px;
+
+      margin-top: 30px;
+
+      font-size: 7px;
+
+      letter-spacing:
+        0.24em;
+    }
+
+
+    .scroll {
+      bottom: 18px;
+    }
+  }
+
+
+  @media (prefers-reduced-motion: reduce) {
+
+    .hero-image img,
+    .scroll span {
+      animation: none;
+    }
+  }
+</style>
