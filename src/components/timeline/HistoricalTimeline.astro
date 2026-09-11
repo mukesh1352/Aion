@@ -1,0 +1,48 @@
+---
+import { getTimeline } from "../../lib/timeline";
+
+import TimelineHeader from "./TimelineHeader.astro";
+import TimelineControls from "./TimelineControls.astro";
+import TimelineViewport from "./TimelineViewport.astro";
+
+import "./timeline.css";
+
+interface Props {
+  worldId: string;
+}
+
+const { worldId } = Astro.props;
+
+const timeline = getTimeline(worldId);
+---
+
+<section
+  class="historical-timeline"
+  data-historical-timeline
+  data-world-id={timeline.id}
+  data-default-year={timeline.defaultYear}
+>
+  <TimelineHeader
+    worldName={timeline.name}
+  />
+
+  <TimelineControls />
+
+  <TimelineViewport
+    min={timeline.start}
+    max={timeline.end}
+  />
+</section>
+
+<script>
+  import { TimelineController } from "./TimelineController";
+
+  const timelines =
+    document.querySelectorAll<HTMLElement>(
+      "[data-historical-timeline]"
+    );
+
+  timelines.forEach((element) => {
+    new TimelineController(element);
+  });
+</script>

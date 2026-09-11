@@ -1,0 +1,51 @@
+---
+import type { TimelineNode as TimelineNodeData } from "../../lib/timeline";
+import { getNodeCenter } from "../../lib/timeline";
+
+interface Props {
+  node: TimelineNodeData;
+  min: number;
+  max: number;
+  index: number;
+}
+
+const {
+  node,
+  min,
+  max,
+  index,
+} = Astro.props;
+
+const center = getNodeCenter(node);
+
+const position =
+  (center - min) /
+  (max - min);
+---
+
+<button
+  type="button"
+  class="timeline-node"
+  data-timeline-node
+  data-node-id={node.id}
+  data-node-level={node.level}
+  data-year={center}
+  data-index={index}
+  style={`--node-position: ${position * 100}%`}
+>
+  <span class="timeline-node-point"></span>
+
+  <span class="timeline-node-label">
+    {node.label}
+  </span>
+
+  <span class="timeline-node-years">
+    {node.start < 0
+      ? `${Math.abs(node.start)} BCE`
+      : node.start}
+    –
+    {node.end < 0
+      ? `${Math.abs(node.end)} BCE`
+      : node.end}
+  </span>
+</button>

@@ -1,0 +1,28 @@
+---
+interface Props {
+  worldName: string;
+}
+
+const { worldName } = Astro.props;
+---
+
+<header class="timeline-header">
+  <div>
+    <span class="timeline-eyebrow">
+      HISTORY TIMELINE
+    </span>
+
+    <h1 data-timeline-title>
+      {worldName}
+    </h1>
+  </div>
+
+  <div class="timeline-current">
+    <span data-timeline-year></span>
+
+    <span
+      class="timeline-current-label"
+      data-timeline-current-label
+    ></span>
+  </div>
+</header>

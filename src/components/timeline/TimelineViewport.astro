@@ -1,0 +1,30 @@
+---
+interface Props {
+  min: number;
+  max: number;
+}
+
+const { min, max } = Astro.props;
+---
+
+<div class="timeline-viewport">
+
+  <div
+    class="timeline-three"
+    data-timeline-three
+    aria-hidden="true"
+  ></div>
+
+  <div
+    class="timeline-axis"
+    data-timeline-axis
+  >
+    <div class="timeline-axis-line"></div>
+
+    <div
+      class="timeline-nodes"
+      data-timeline-nodes
+    ></div>
+  </div>
+
+</div>
