@@ -400,3 +400,56 @@
     font-size: 0.48rem;
   }
 }
+
+/* ==================================================
+   AION INDIA — ATMOSPHERE TRANSPARENCY
+   ================================================== */
+
+.historical-timeline {
+  position: relative;
+  z-index: 2;
+
+  background: transparent !important;
+}
+
+
+/* Timeline header */
+
+.timeline-header {
+  background: transparent !important;
+}
+
+
+/* Timeline controls */
+
+.timeline-controls {
+  background: transparent !important;
+}
+
+
+/* Timeline viewport */
+
+.timeline-viewport {
+  background: transparent !important;
+}
+
+
+/* Three.js layer */
+
+.timeline-three {
+  background: transparent !important;
+}
+
+
+/* Axis */
+
+.timeline-axis {
+  background: transparent !important;
+}
+
+
+/* Nodes */
+
+.timeline-nodes {
+  background: transparent !important;
+}

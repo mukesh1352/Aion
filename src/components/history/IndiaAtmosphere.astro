@@ -1,0 +1,866 @@
+<div
+  class="india-atmosphere"
+  data-india-atmosphere
+  aria-hidden="true"
+>
+  <!-- ==================================================
+       BASE
+       ================================================== -->
+
+  <div class="india-atmosphere-base"></div>
+
+
+  <!-- ==================================================
+       ANCIENT INDIA — Indus Valley / early Vedic
+       Sun-baked terracotta, dried river clay, dusty ochre
+       ================================================== -->
+
+  <div
+    class="india-atmosphere-state india-atmosphere-state--ancient"
+    data-atmosphere-state="ancient-india"
+  >
+    <div class="atmosphere-ancient-light"></div>
+
+    <div class="atmosphere-ancient-earth"></div>
+
+    <div class="atmosphere-ancient-geometry"></div>
+  </div>
+
+
+  <!-- ==================================================
+       CLASSICAL INDIA — Maurya / Gupta "golden age"
+       Warm luminous gold and amber, sandstone in sun
+       ================================================== -->
+
+  <div
+    class="india-atmosphere-state india-atmosphere-state--classical"
+    data-atmosphere-state="classical-india"
+  >
+    <div class="atmosphere-classical-light"></div>
+
+    <div class="atmosphere-classical-geometry"></div>
+
+    <div class="atmosphere-classical-structure"></div>
+  </div>
+
+
+  <!-- ==================================================
+       MEDIEVAL INDIA — Sultanate era
+       Cool stone grays, deep maroon/indigo shadow, dusk
+       ================================================== -->
+
+  <div
+    class="india-atmosphere-state india-atmosphere-state--medieval"
+    data-atmosphere-state="medieval-india"
+  >
+    <div class="atmosphere-medieval-light"></div>
+
+    <div class="atmosphere-medieval-shadow"></div>
+
+    <div class="atmosphere-medieval-geometry"></div>
+  </div>
+
+
+  <!-- ==================================================
+       EARLY MODERN INDIA — Mughal era
+       Opulent jewel tones: emerald, ruby, warm marble glow
+       ================================================== -->
+
+  <div
+    class="india-atmosphere-state india-atmosphere-state--early-modern"
+    data-atmosphere-state="early-modern-india"
+  >
+    <div class="atmosphere-early-modern-light"></div>
+
+    <div class="atmosphere-early-modern-glow"></div>
+
+    <div class="atmosphere-early-modern-geometry"></div>
+  </div>
+
+
+  <!-- ==================================================
+       MODERN INDIA
+       Cool steel blue-gray, industrial grid
+       ================================================== -->
+
+  <div
+    class="india-atmosphere-state india-atmosphere-state--modern"
+    data-atmosphere-state="modern-india"
+  >
+    <div class="atmosphere-modern-light"></div>
+
+    <div class="atmosphere-modern-cool"></div>
+
+    <div class="atmosphere-modern-grid"></div>
+  </div>
+
+
+  <!-- ==================================================
+       THREE.JS DUST
+       ================================================== -->
+
+  <div
+    class="india-atmosphere-three"
+    data-india-atmosphere-three
+  ></div>
+
+
+  <!-- ==================================================
+       HAZE
+       ================================================== -->
+
+  <div
+    class="india-atmosphere-haze"
+    data-atmosphere-haze
+  ></div>
+
+
+  <!-- ==================================================
+       VIGNETTE
+       ================================================== -->
+
+  <div class="india-atmosphere-vignette"></div>
+
+</div>
+
+
+<style>
+
+  /* ==================================================
+     ROOT
+     ================================================== */
+
+  .india-atmosphere {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 0;
+
+    overflow: hidden;
+
+    pointer-events: none;
+
+    background: #080a0d;
+  }
+
+
+  /* ==================================================
+     BASE
+     ================================================== */
+
+  .india-atmosphere-base {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+      radial-gradient(
+        ellipse 90% 80% at 50% 40%,
+        rgba(70, 52, 35, 0.10),
+        transparent 70%
+      ),
+
+      #080a0d;
+  }
+
+
+  /* ==================================================
+     STATES
+     ================================================== */
+
+  .india-atmosphere-state {
+    position: absolute;
+
+    inset: 0;
+
+    opacity: 0;
+
+    overflow: hidden;
+
+    pointer-events: none;
+  }
+
+
+  /* ==================================================
+     ANCIENT INDIA
+     Terracotta / dried clay / dusty ochre
+     ================================================== */
+
+  .india-atmosphere-state--ancient {
+    opacity: 1;
+  }
+
+
+  .atmosphere-ancient-light {
+    position: absolute;
+
+    left: 50%;
+    top: 42%;
+
+    width: 90vw;
+    height: 75vw;
+
+    max-width: 1300px;
+    max-height: 900px;
+
+    transform:
+      translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        ellipse,
+
+        rgba(
+          178,
+          97,
+          54,
+          0.18
+        ),
+
+        rgba(
+          122,
+          64,
+          38,
+          0.09
+        ) 38%,
+
+        transparent 72%
+      );
+
+    filter: blur(38px);
+  }
+
+
+  .atmosphere-ancient-earth {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+      radial-gradient(
+        ellipse 55% 70% at 12% 78%,
+        rgba(140, 80, 40, 0.15),
+        transparent 70%
+      ),
+
+      radial-gradient(
+        ellipse 50% 60% at 88% 20%,
+        rgba(163, 108, 56, 0.11),
+        transparent 70%
+      );
+  }
+
+
+  .atmosphere-ancient-geometry {
+    position: absolute;
+
+    inset: -10%;
+
+    opacity: 0.06;
+
+    background-image:
+
+      linear-gradient(
+        45deg,
+        transparent 48.8%,
+        rgba(196, 143, 82, 0.42) 49.5%,
+        transparent 50.2%
+      ),
+
+      linear-gradient(
+        -45deg,
+        transparent 48.8%,
+        rgba(196, 143, 82, 0.28) 49.5%,
+        transparent 50.2%
+      );
+
+    background-size:
+      120px 120px,
+      120px 120px;
+
+    mask-image:
+      radial-gradient(
+        ellipse at center,
+        black,
+        transparent 78%
+      );
+
+    -webkit-mask-image:
+      radial-gradient(
+        ellipse at center,
+        black,
+        transparent 78%
+      );
+  }
+
+
+  /* ==================================================
+     CLASSICAL INDIA
+     Warm luminous gold / amber "golden age"
+     ================================================== */
+
+  .atmosphere-classical-light {
+    position: absolute;
+
+    left: 50%;
+    top: 38%;
+
+    width: 90vw;
+    height: 70vw;
+
+    max-width: 1350px;
+    max-height: 850px;
+
+    transform:
+      translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        ellipse,
+
+        rgba(
+          230,
+          182,
+          92,
+          0.24
+        ),
+
+        rgba(
+          195,
+          140,
+          58,
+          0.12
+        ) 34%,
+
+        rgba(
+          138,
+          92,
+          40,
+          0.05
+        ) 55%,
+
+        transparent 75%
+      );
+
+    filter: blur(32px);
+  }
+
+
+  .atmosphere-classical-geometry {
+    position: absolute;
+
+    inset: -10%;
+
+    opacity: 0.08;
+
+    background-image:
+
+      linear-gradient(
+        60deg,
+        transparent 48.8%,
+        rgba(235, 191, 106, 0.5) 49.4%,
+        transparent 50%
+      ),
+
+      linear-gradient(
+        120deg,
+        transparent 48.8%,
+        rgba(235, 191, 106, 0.34) 49.4%,
+        transparent 50%
+      );
+
+    background-size:
+      150px 150px,
+      150px 150px;
+
+    mask-image:
+      radial-gradient(
+        ellipse at center,
+        black,
+        transparent 76%
+      );
+
+    -webkit-mask-image:
+      radial-gradient(
+        ellipse at center,
+        black,
+        transparent 76%
+      );
+  }
+
+
+  .atmosphere-classical-structure {
+    position: absolute;
+
+    left: 50%;
+    top: 46%;
+
+    width: 60vw;
+    height: 60vw;
+
+    max-width: 850px;
+    max-height: 850px;
+
+    transform:
+      translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    border:
+      1px solid
+      rgba(230, 182, 92, 0.07);
+
+    box-shadow:
+      0 0 0 80px rgba(230, 182, 92, 0.015),
+      0 0 0 160px rgba(230, 182, 92, 0.01);
+  }
+
+
+  /* ==================================================
+     MEDIEVAL INDIA
+     Cool stone gray / deep maroon-indigo shadow
+     ================================================== */
+
+  .atmosphere-medieval-light {
+    position: absolute;
+
+    left: 48%;
+    top: 48%;
+
+    width: 75vw;
+    height: 75vw;
+
+    max-width: 1100px;
+    max-height: 850px;
+
+    transform:
+      translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        ellipse,
+        rgba(
+          92,
+          58,
+          61,
+          0.15
+        ),
+
+        rgba(
+          51,
+          43,
+          58,
+          0.09
+        ) 40%,
+
+        transparent 74%
+      );
+
+    filter: blur(42px);
+  }
+
+
+  .atmosphere-medieval-shadow {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+      radial-gradient(
+        ellipse at 75% 25%,
+        rgba(38, 34, 46, 0.30),
+        transparent 52%
+      ),
+
+      radial-gradient(
+        ellipse at 15% 80%,
+        rgba(74, 40, 46, 0.24),
+        transparent 55%
+      );
+  }
+
+
+  .atmosphere-medieval-geometry {
+    position: absolute;
+
+    inset: 0;
+
+    opacity: 0.05;
+
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 80px,
+        rgba(150, 110, 110, 0.28) 81px,
+        transparent 82px
+      );
+
+    mask-image:
+      linear-gradient(
+        to bottom,
+        transparent,
+        black 25%,
+        black 75%,
+        transparent
+      );
+
+    -webkit-mask-image:
+      linear-gradient(
+        to bottom,
+        transparent,
+        black 25%,
+        black 75%,
+        transparent
+      );
+  }
+
+
+  /* ==================================================
+     EARLY MODERN INDIA
+     Mughal opulence: emerald, ruby, warm marble glow
+     ================================================== */
+
+  .atmosphere-early-modern-light {
+    position: absolute;
+
+    left: 45%;
+    top: 40%;
+
+    width: 90vw;
+    height: 70vw;
+
+    max-width: 1400px;
+    max-height: 900px;
+
+    transform:
+      translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        ellipse,
+
+        rgba(
+          178,
+          64,
+          72,
+          0.15
+        ),
+
+        rgba(
+          124,
+          52,
+          52,
+          0.08
+        ) 40%,
+
+        transparent 74%
+      );
+
+    filter: blur(36px);
+  }
+
+
+  .atmosphere-early-modern-glow {
+    position: absolute;
+
+    right: -15%;
+    bottom: -25%;
+
+    width: 65vw;
+    height: 55vw;
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        ellipse,
+        rgba(46, 122, 92, 0.14),
+        transparent 70%
+      );
+
+    filter: blur(80px);
+  }
+
+
+  .atmosphere-early-modern-geometry {
+    position: absolute;
+
+    inset: 0;
+
+    opacity: 0.045;
+
+    background-image:
+
+      linear-gradient(
+        30deg,
+        transparent 49%,
+        rgba(216, 176, 99, 0.45) 50%,
+        transparent 51%
+      ),
+
+      linear-gradient(
+        150deg,
+        transparent 49%,
+        rgba(46, 122, 92, 0.32) 50%,
+        transparent 51%
+      );
+
+    background-size:
+      180px 180px,
+      180px 180px;
+  }
+
+
+  /* ==================================================
+     MODERN INDIA
+     Cool steel blue-gray, industrial grid
+     ================================================== */
+
+  .atmosphere-modern-light {
+    position: absolute;
+
+    left: 50%;
+    top: 38%;
+
+    width: 90vw;
+    height: 70vw;
+
+    max-width: 1400px;
+    max-height: 900px;
+
+    transform:
+      translate(-50%, -50%);
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        ellipse,
+
+        rgba(
+          75,
+          89,
+          99,
+          0.14
+        ),
+
+        rgba(
+          64,
+          65,
+          69,
+          0.08
+        ) 40%,
+
+        transparent 74%
+      );
+
+    filter: blur(40px);
+  }
+
+
+  .atmosphere-modern-cool {
+    position: absolute;
+
+    right: -10%;
+    top: -10%;
+
+    width: 60vw;
+    height: 55vw;
+
+    border-radius: 50%;
+
+    background:
+      radial-gradient(
+        ellipse,
+        rgba(74, 91, 108, 0.10),
+        transparent 70%
+      );
+
+    filter: blur(90px);
+  }
+
+
+  .atmosphere-modern-grid {
+    position: absolute;
+
+    inset: 0;
+
+    opacity: 0.025;
+
+    background-image:
+
+      linear-gradient(
+        rgba(200, 210, 220, 0.30) 1px,
+        transparent 1px
+      ),
+
+      linear-gradient(
+        90deg,
+        rgba(200, 210, 220, 0.30) 1px,
+        transparent 1px
+      );
+
+    background-size:
+      100px 100px;
+
+    mask-image:
+      radial-gradient(
+        ellipse at center,
+        black,
+        transparent 75%
+      );
+
+    -webkit-mask-image:
+      radial-gradient(
+        ellipse at center,
+        black,
+        transparent 75%
+      );
+  }
+
+
+  /* ==================================================
+     THREE.JS
+     ================================================== */
+
+  .india-atmosphere-three {
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+  }
+
+
+  .india-atmosphere-three canvas {
+    display: block;
+
+    width: 100%;
+
+    height: 100%;
+  }
+
+
+  /* ==================================================
+     HAZE
+     ================================================== */
+
+  .india-atmosphere-haze {
+    position: absolute;
+
+    inset: -20%;
+
+    opacity: 0.35;
+
+    background:
+      radial-gradient(
+        ellipse at 30% 70%,
+        rgba(155, 104, 52, 0.07),
+        transparent 45%
+      ),
+
+      radial-gradient(
+        ellipse at 70% 25%,
+        rgba(200, 161, 90, 0.05),
+        transparent 45%
+      );
+
+    filter: blur(70px);
+
+    animation:
+      atmosphere-haze
+      24s ease-in-out
+      infinite alternate;
+  }
+
+
+  /* ==================================================
+     VIGNETTE
+     ================================================== */
+
+  .india-atmosphere-vignette {
+    position: absolute;
+
+    inset: 0;
+
+    background:
+      radial-gradient(
+        ellipse at center,
+
+        transparent 30%,
+
+        rgba(8, 10, 13, 0.08) 55%,
+
+        rgba(8, 10, 13, 0.42) 82%,
+
+        rgba(8, 10, 13, 0.88) 100%
+      );
+  }
+
+
+  /* ==================================================
+     HAZE ANIMATION
+     ================================================== */
+
+  @keyframes atmosphere-haze {
+
+    from {
+      transform:
+        translate3d(
+          -2%,
+          1%,
+          0
+        )
+        scale(1);
+    }
+
+    to {
+      transform:
+        translate3d(
+          4%,
+          -3%,
+          0
+        )
+        scale(1.06);
+    }
+
+  }
+
+
+  /* ==================================================
+     REDUCED MOTION
+     ================================================== */
+
+  @media (prefers-reduced-motion: reduce) {
+
+    .india-atmosphere-haze {
+      animation: none;
+    }
+
+  }
+
+</style>
+
+
+<script>
+  import { IndiaAtmosphere } from "./IndiaAtmosphere";
+
+  const containers =
+    document.querySelectorAll<HTMLElement>(
+      "[data-india-atmosphere]"
+    );
+
+  containers.forEach((container) => {
+    new IndiaAtmosphere(container);
+  });
+</script>

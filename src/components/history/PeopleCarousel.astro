@@ -1,0 +1,332 @@
+---
+import { getContentByType } from "../../lib/content";
+
+interface Props {
+  worldId: string;
+  eraId: string;
+}
+
+const { worldId, eraId } = Astro.props;
+
+const people = await getContentByType(
+  worldId,
+  eraId,
+  "person"
+);
+---
+
+<section class="people-section">
+
+  <div class="people-header">
+    <div>
+      <span class="people-eyebrow">
+        PEOPLE
+      </span>
+
+      <h2>
+        Figures of the Era
+      </h2>
+    </div>
+
+    <div class="people-count">
+      {people.length} figures
+    </div>
+  </div>
+
+  <div class="people-carousel">
+
+    {
+      people.map((person) => (
+        <article class="person-card">
+
+          <div class="person-card-content">
+
+            <span class="person-type">
+              PERSON
+            </span>
+
+            <h3>
+              {person.data.title}
+            </h3>
+
+            {
+              person.data.subtitle && (
+                <p class="person-subtitle">
+                  {person.data.subtitle}
+                </p>
+              )
+            }
+
+            <p class="person-summary">
+              {person.data.summary}
+            </p>
+
+            <div class="person-meta">
+
+              <span>
+                {person.data.status}
+              </span>
+
+              {
+                person.data.startYear !== undefined &&
+                person.data.endYear !== undefined && (
+                  <span>
+                    {person.data.startYear} —
+                    {person.data.endYear}
+                  </span>
+                )
+              }
+
+            </div>
+
+            <a
+              href={`/india/${person.data.id}`}
+              class="person-link"
+            >
+              EXPLORE →
+            </a>
+
+          </div>
+
+        </article>
+      ))
+    }
+
+  </div>
+
+</section>
+
+<style>
+
+  .people-section {
+    width: min(
+      1200px,
+      calc(100% - 3rem)
+    );
+    margin: 5rem auto;
+  }
+
+  .people-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .people-eyebrow {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #c8a15a;
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+  }
+
+  .people-header h2 {
+    margin: 0;
+    color: #e8e3d8;
+    font-size: clamp(
+      1.5rem,
+      3vw,
+      2.25rem
+    );
+    font-weight: 400;
+  }
+
+  .people-count {
+    color:
+      rgba(
+        232,
+        227,
+        216,
+        0.45
+      );
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .people-carousel {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns:
+      minmax(
+        280px,
+        360px
+      );
+
+    gap: 1rem;
+
+    overflow-x: auto;
+
+    padding-bottom: 1rem;
+
+    scroll-snap-type: x mandatory;
+
+    scrollbar-width: thin;
+  }
+
+  .person-card {
+    min-height: 300px;
+
+    scroll-snap-align: start;
+
+    background:
+      rgba(
+        15,
+        17,
+        21,
+        0.72
+      );
+
+    border:
+      1px solid
+      rgba(
+        200,
+        161,
+        90,
+        0.16
+      );
+
+    backdrop-filter: blur(10px);
+
+    transition:
+      transform 220ms ease,
+      border-color 220ms ease;
+  }
+
+  .person-card:hover {
+    transform:
+      translateY(-4px);
+
+    border-color:
+      rgba(
+        200,
+        161,
+        90,
+        0.4
+      );
+  }
+
+  .person-card-content {
+    display: flex;
+    flex-direction: column;
+
+    height: 100%;
+
+    padding: 1.5rem;
+    box-sizing: border-box;
+  }
+
+  .person-type {
+    color:
+      rgba(
+        200,
+        161,
+        90,
+        0.7
+      );
+
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+  }
+
+  .person-card h3 {
+    margin:
+      1.25rem 0
+      0.35rem;
+
+    color: #e8e3d8;
+
+    font-size: 1.5rem;
+    font-weight: 400;
+  }
+
+  .person-subtitle {
+    margin: 0;
+
+    color:
+      rgba(
+        232,
+        227,
+        216,
+        0.55
+      );
+
+    font-size: 0.78rem;
+  }
+
+  .person-summary {
+    margin:
+      1.25rem 0;
+
+    color:
+      rgba(
+        232,
+        227,
+        216,
+        0.72
+      );
+
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+
+  .person-meta {
+    display: flex;
+    gap: 1rem;
+
+    margin-top: auto;
+
+    padding-top: 1rem;
+
+    border-top:
+      1px solid
+      rgba(
+        232,
+        227,
+        216,
+        0.08
+      );
+
+    color:
+      rgba(
+        232,
+        227,
+        216,
+        0.4
+      );
+
+    font-size: 0.62rem;
+  }
+
+  .person-link {
+    display: inline-block;
+
+    margin-top: 1rem;
+
+    color: #c8a15a;
+
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
+    text-decoration: none;
+  }
+
+  @media (max-width: 700px) {
+
+    .people-section {
+      width:
+        calc(100% - 2rem);
+      margin: 3rem auto;
+    }
+
+    .people-carousel {
+      grid-auto-columns:
+        minmax(
+          260px,
+          82vw
+        );
+    }
+
+  }
+
+</style>

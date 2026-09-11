@@ -1,0 +1,1255 @@
+---
+import { getCollection } from "astro:content";
+
+import { getTimeline } from "../../lib/timeline";
+
+import "./india-content.css";
+
+interface Props {
+  worldId: string;
+}
+
+const { worldId } = Astro.props;
+
+const timeline = getTimeline(worldId);
+
+const content = await getCollection(
+  "historicalContent"
+);
+
+const indiaContent = content.filter(
+  (item) => item.data.world === worldId
+);
+
+/*
+ * Server-side fallback.
+ *
+ * This is only used when there is no saved
+ * era in localStorage yet.
+ */
+const defaultEra =
+  timeline.eras.find(
+    (era) =>
+      timeline.defaultYear >= era.start &&
+      timeline.defaultYear <= era.end
+  ) ?? timeline.eras[0];
+
+const contentByEra = timeline.eras.map(
+  (era) => ({
+    era,
+
+    items: indiaContent.filter(
+      (item) =>
+        item.data.era === era.id
+    ),
+  })
+);
+---
+
+<section
+  class="india-content"
+  data-india-content
+  data-world-id={worldId}
+  data-default-era={defaultEra.id}
+>
+  {
+    contentByEra.map(
+      ({ era, items }) => {
+        const people =
+          items.filter(
+            (item) =>
+              item.data.type === "person"
+          );
+
+        const events =
+          items.filter(
+            (item) =>
+              item.data.type === "event"
+          );
+
+        const places =
+          items.filter(
+            (item) =>
+              item.data.type === "place"
+          );
+
+        const stories =
+          items.filter(
+            (item) =>
+              item.data.type === "story"
+          );
+
+        const facts =
+          items.filter(
+            (item) =>
+              item.data.type === "fact"
+          );
+
+        const overview =
+          items.find(
+            (item) =>
+              item.data.type === "overview"
+          );
+
+        return (
+          <article
+            class:list={[
+              "era-content",
+              {
+                "is-active":
+                  era.id ===
+                  defaultEra.id,
+              },
+            ]}
+            data-era-content={era.id}
+          >
+            <!--
+              ==========================================
+              ERA HEADER
+              ==========================================
+            -->
+
+            <div class="era-heading">
+              <div>
+                <span class="era-eyebrow">
+                  {era.start < 0
+                    ? `${Math.abs(
+                        era.start
+                      )} BCE`
+                    : `${era.start} CE`}
+
+                  {" — "}
+
+                  {era.end < 0
+                    ? `${Math.abs(
+                        era.end
+                      )} BCE`
+                    : `${era.end} CE`}
+                </span>
+
+                <h2>
+                  {era.label}
+                </h2>
+              </div>
+
+              {
+                overview && (
+                  <p class="era-summary">
+                    {
+                      overview.data
+                        .summary
+                    }
+                  </p>
+                )
+              }
+            </div>
+
+            <!--
+              ==========================================
+              PEOPLE
+              ==========================================
+            -->
+
+            {
+              people.length > 0 && (
+                <section
+                  class="content-section people-section"
+                  data-carousel-section
+                >
+                  <div class="section-header">
+                    <div>
+                      <span class="section-kicker">
+                        PEOPLE
+                      </span>
+
+                      <h3>
+                        People of the era
+                      </h3>
+                    </div>
+
+                    <div class="carousel-controls">
+                      <button
+                        type="button"
+                        class="carousel-button"
+                        data-carousel-prev
+                        aria-label="Previous person"
+                      >
+                        ←
+                      </button>
+
+                      <button
+                        type="button"
+                        class="carousel-button"
+                        data-carousel-next
+                        aria-label="Next person"
+                      >
+                        →
+                      </button>
+                    </div>
+                  </div>
+
+                  <div
+                    class="people-carousel"
+                    data-people-carousel
+                  >
+                    <div
+                      class="people-stage"
+                      data-people-stage
+                    >
+                      {
+                        people.map(
+                          (
+                            person,
+                            index
+                          ) => (
+                            <article
+                              class="person-card"
+                              data-person-card
+                              data-index={
+                                index
+                              }
+                            >
+                              <div class="person-card-visual">
+                                <div class="person-card-glow"></div>
+
+                                <div class="person-card-era">
+                                  {person.data.era
+                                    .replaceAll(
+                                      "-",
+                                      " "
+                                    )
+                                    .toUpperCase()}
+                                </div>
+
+                                <div class="person-card-center">
+                                  <span class="person-card-type">
+                                    PERSON
+                                  </span>
+
+                                  <h4>
+                                    {
+                                      person
+                                        .data
+                                        .title
+                                    }
+                                  </h4>
+
+                                  {
+                                    person
+                                      .data
+                                      .subtitle && (
+                                      <p>
+                                        {
+                                          person
+                                            .data
+                                            .subtitle
+                                        }
+                                      </p>
+                                    )
+                                  }
+                                </div>
+
+                                <div class="person-card-line"></div>
+                              </div>
+
+                              <div class="person-card-body">
+                                <div>
+                                  <h4>
+                                    {
+                                      person
+                                        .data
+                                        .title
+                                    }
+                                  </h4>
+
+                                  {
+                                    person
+                                      .data
+                                      .subtitle && (
+                                      <p class="person-subtitle">
+                                        {
+                                          person
+                                            .data
+                                            .subtitle
+                                        }
+                                      </p>
+                                    )
+                                  }
+                                </div>
+
+                                <p class="person-description">
+                                  {
+                                    person
+                                      .data
+                                      .summary
+                                  }
+                                </p>
+
+                                {
+                                  person
+                                    .data
+                                    .tags &&
+                                  person.data
+                                    .tags.length >
+                                    0 && (
+                                    <div class="content-tags">
+                                      {person.data.tags.map(
+                                        (
+                                          tag
+                                        ) => (
+                                          <span class="content-tag">
+                                            {tag}
+                                          </span>
+                                        )
+                                      )}
+                                    </div>
+                                  )
+                                }
+
+                                <div class="person-card-footer">
+                                  <span class="content-status">
+                                    {person
+                                      .data
+                                      .status
+                                      .replaceAll(
+                                        "-",
+                                        " "
+                                      )
+                                      .toUpperCase()}
+                                  </span>
+
+                                  <a
+                                    href={`/india/${person.id}`}
+                                    class="learn-more"
+                                  >
+                                    <span>
+                                      Learn
+                                      more
+                                    </span>
+
+                                    <span class="learn-arrow">
+                                      →
+                                    </span>
+                                  </a>
+                                </div>
+                              </div>
+                            </article>
+                          )
+                        )
+                      }
+                    </div>
+                  </div>
+
+                  <div class="carousel-progress">
+                    <div
+                      class="carousel-progress-track"
+                      data-carousel-progress
+                    ></div>
+                  </div>
+                </section>
+              )
+            }
+
+            <!--
+              ==========================================
+              EVENTS
+              ==========================================
+            -->
+
+            {
+              events.length > 0 && (
+                <section class="content-section">
+                  <div class="section-header simple">
+                    <div>
+                      <span class="section-kicker">
+                        EVENTS
+                      </span>
+
+                      <h3>
+                        Events
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div class="editorial-grid">
+                    {
+                      events.map(
+                        (event) => (
+                          <article class="editorial-card">
+                            <div class="editorial-card-top">
+                              <span class="editorial-type">
+                                EVENT
+                              </span>
+
+                              <span class="editorial-year">
+                                {
+                                  event
+                                    .data
+                                    .startYear &&
+                                  event.data
+                                    .startYear <
+                                    0
+                                    ? `${Math.abs(
+                                        event
+                                          .data
+                                          .startYear
+                                      )} BCE`
+                                    : `${event.data.startYear} CE`
+                                }
+                              </span>
+                            </div>
+
+                            <h4>
+                              {
+                                event
+                                  .data
+                                  .title
+                              }
+                            </h4>
+
+                            {
+                              event
+                                .data
+                                .location && (
+                                <p class="editorial-location">
+                                  {
+                                    event
+                                      .data
+                                      .location
+                                      .name
+                                  }
+                                </p>
+                              )
+                            }
+
+                            <p class="editorial-description">
+                              {
+                                event
+                                  .data
+                                  .summary
+                              }
+                            </p>
+
+                            <a
+                              href={`/india/${event.id}`}
+                              class="editorial-link"
+                            >
+                              Learn more →
+                            </a>
+                          </article>
+                        )
+                      )
+                    }
+                  </div>
+                </section>
+              )
+            }
+
+            <!--
+              ==========================================
+              PLACES
+              ==========================================
+            -->
+
+            {
+              places.length > 0 && (
+                <section class="content-section">
+                  <div class="section-header simple">
+                    <div>
+                      <span class="section-kicker">
+                        PLACES
+                      </span>
+
+                      <h3>
+                        Places
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div class="editorial-grid">
+                    {
+                      places.map(
+                        (place) => (
+                          <article class="editorial-card place-card">
+                            <div class="editorial-card-top">
+                              <span class="editorial-type">
+                                PLACE
+                              </span>
+
+                              <span class="place-marker">
+                                ●
+                              </span>
+                            </div>
+
+                            <h4>
+                              {
+                                place
+                                  .data
+                                  .title
+                              }
+                            </h4>
+
+                            {
+                              place
+                                .data
+                                .subtitle && (
+                                <p class="editorial-subtitle">
+                                  {
+                                    place
+                                      .data
+                                      .subtitle
+                                  }
+                                </p>
+                              )
+                            }
+
+                            <p class="editorial-description">
+                              {
+                                place
+                                  .data
+                                  .summary
+                              }
+                            </p>
+
+                            <a
+                              href={`/india/${place.id}`}
+                              class="editorial-link"
+                            >
+                              Explore place →
+                            </a>
+                          </article>
+                        )
+                      )
+                    }
+                  </div>
+                </section>
+              )
+            }
+
+            <!--
+              ==========================================
+              STORIES
+              ==========================================
+            -->
+
+            {
+              stories.length > 0 && (
+                <section class="content-section">
+                  <div class="section-header simple">
+                    <div>
+                      <span class="section-kicker">
+                        STORIES
+                      </span>
+
+                      <h3>
+                        Stories & traditions
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div class="story-grid">
+                    {
+                      stories.map(
+                        (story) => (
+                          <article class="story-card">
+                            <div class="story-card-inner">
+                              <span class="story-type">
+                                STORY
+                              </span>
+
+                              <h4>
+                                {
+                                  story
+                                    .data
+                                    .title
+                                }
+                              </h4>
+
+                              <p>
+                                {
+                                  story
+                                    .data
+                                    .summary
+                                }
+                              </p>
+
+                              <div class="story-footer">
+                                <span>
+                                  {
+                                    story
+                                      .data
+                                      .status
+                                      .replaceAll(
+                                        "-",
+                                        " "
+                                      )
+                                      .toUpperCase()
+                                  }
+                                </span>
+
+                                <a
+                                  href={`/india/${story.id}`}
+                                >
+                                  Read story →
+                                </a>
+                              </div>
+                            </div>
+                          </article>
+                        )
+                      )
+                    }
+                  </div>
+                </section>
+              )
+            }
+
+            <!--
+              ==========================================
+              FACTS
+              ==========================================
+            -->
+
+            {
+              facts.length > 0 && (
+                <section class="content-section">
+                  <div class="section-header simple">
+                    <div>
+                      <span class="section-kicker">
+                        FACTS
+                      </span>
+
+                      <h3>
+                        Did you know?
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div class="facts-grid">
+                    {
+                      facts.map(
+                        (fact) => (
+                          <article class="fact-card">
+                            <span class="fact-label">
+                              DID YOU KNOW?
+                            </span>
+
+                            <h4>
+                              {
+                                fact
+                                  .data
+                                  .title
+                              }
+                            </h4>
+
+                            <p>
+                              {
+                                fact
+                                  .data
+                                  .summary
+                              }
+                            </p>
+
+                            <a
+                              href={`/india/${fact.id}`}
+                            >
+                              Learn more →
+                            </a>
+                          </article>
+                        )
+                      )
+                    }
+                  </div>
+                </section>
+              )
+            }
+          </article>
+        );
+      }
+    )
+  }
+</section>
+
+<script>
+  import { animate } from "animejs";
+
+  import {
+    getStoredEra,
+  } from "../../lib/timeline-state";
+
+  /*
+   * ==================================================
+   * PEOPLE CAROUSEL
+   * ==================================================
+   */
+class PeopleCarousel {
+  private section: HTMLElement;
+  private cards: HTMLElement[];
+  private stage: HTMLElement;
+  private previous: HTMLButtonElement;
+  private next: HTMLButtonElement;
+  private progress: HTMLElement;
+
+  private activeIndex = 0;
+
+  private startX = 0;
+  private currentDelta = 0;
+  private dragging = false;
+
+  constructor(section: HTMLElement) {
+    this.section = section;
+
+    this.cards = Array.from(
+      section.querySelectorAll<HTMLElement>(
+        "[data-person-card]"
+      )
+    );
+
+    this.stage =
+      section.querySelector<HTMLElement>(
+        "[data-people-stage]"
+      )!;
+
+    this.previous =
+      section.querySelector<HTMLButtonElement>(
+        "[data-carousel-prev]"
+      )!;
+
+    this.next =
+      section.querySelector<HTMLButtonElement>(
+        "[data-carousel-next]"
+      )!;
+
+    this.progress =
+      section.querySelector<HTMLElement>(
+        "[data-carousel-progress]"
+      )!;
+
+    if (!this.cards.length) {
+      return;
+    }
+
+    this.previous.addEventListener(
+      "click",
+      () => {
+        this.goTo(this.activeIndex - 1);
+      }
+    );
+
+    this.next.addEventListener(
+      "click",
+      () => {
+        this.goTo(this.activeIndex + 1);
+      }
+    );
+
+    this.stage.addEventListener(
+      "pointerdown",
+      this.handlePointerDown
+    );
+
+    this.stage.addEventListener(
+      "pointermove",
+      this.handlePointerMove
+    );
+
+    this.stage.addEventListener(
+      "pointerup",
+      this.handlePointerUp
+    );
+
+    this.stage.addEventListener(
+      "pointercancel",
+      this.handlePointerUp
+    );
+
+    window.addEventListener(
+      "keydown",
+      this.handleKeyboard
+    );
+
+    this.stage.style.cursor = "grab";
+
+    this.update(false);
+  }
+
+  private getOffset(index: number): number {
+    const total = this.cards.length;
+
+    let offset =
+      index - this.activeIndex;
+
+    if (offset > total / 2) {
+      offset -= total;
+    }
+
+    if (offset < -total / 2) {
+      offset += total;
+    }
+
+    return offset;
+  }
+
+  private getSpacing(): number {
+    const width = this.stage.clientWidth;
+
+    return Math.min(
+      width * 0.32,
+      430
+    );
+  }
+
+  private update(animateCards = true) {
+    const spacing =
+      this.getSpacing();
+
+    this.cards.forEach(
+      (card, index) => {
+        const offset =
+          this.getOffset(index);
+
+        this.applyCardPosition(
+          card,
+          offset,
+          0,
+          animateCards
+        );
+      }
+    );
+
+    this.updateControls();
+  }
+
+  private applyCardPosition(
+    card: HTMLElement,
+    offset: number,
+    dragDelta: number,
+    shouldAnimate: boolean
+  ) {
+    const spacing =
+      this.getSpacing();
+
+    const abs =
+      Math.abs(offset);
+
+    const x =
+      offset * spacing +
+      dragDelta * 0.45;
+
+    const z =
+      -abs * 120;
+
+    const rotateY =
+      offset === 0
+        ? dragDelta * -0.02
+        : offset > 0
+          ? -18 - Math.min(abs * 5, 22)
+          : 18 + Math.min(abs * 5, 22);
+
+    const scale =
+      offset === 0
+        ? 1
+        : Math.max(
+            0.72,
+            0.94 - abs * 0.1
+          );
+
+    const opacity =
+      offset === 0
+        ? 1
+        : Math.max(
+            0.28,
+            0.82 - abs * 0.2
+          );
+
+    const duration =
+      shouldAnimate ? 700 : 0;
+
+    animate(card, {
+      translateX: x,
+      translateY: "-50%",
+      translateZ: z,
+      rotateY,
+      scale,
+      opacity,
+
+      duration,
+
+      ease: "out(4)",
+    });
+
+    card.style.zIndex =
+      String(100 - abs * 10);
+
+    card.style.pointerEvents =
+      offset === 0
+        ? "auto"
+        : "none";
+  }
+
+  private updateControls() {
+    const total =
+      this.cards.length;
+
+    this.previous.disabled =
+      total <= 1;
+
+    this.next.disabled =
+      total <= 1;
+
+    const progress =
+      total <= 1
+        ? 100
+        : ((this.activeIndex + 1) /
+            total) *
+          100;
+
+    this.progress.style.width =
+      `${progress}%`;
+  }
+
+  private goTo(index: number) {
+    if (
+      this.cards.length <= 1
+    ) {
+      return;
+    }
+
+    this.activeIndex =
+      (index + this.cards.length) %
+      this.cards.length;
+
+    this.currentDelta = 0;
+
+    this.update(true);
+  }
+
+  private handlePointerDown = (
+    event: PointerEvent
+  ) => {
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest(
+        "a, button"
+      )
+    ) {
+      return;
+    }
+
+    this.dragging = true;
+
+    this.startX =
+      event.clientX;
+
+    this.currentDelta = 0;
+
+    this.stage.setPointerCapture(
+      event.pointerId
+    );
+
+    this.stage.style.cursor =
+      "grabbing";
+  };
+
+  private handlePointerMove = (
+    event: PointerEvent
+  ) => {
+    if (!this.dragging) {
+      return;
+    }
+
+    this.currentDelta =
+      event.clientX -
+      this.startX;
+
+    const delta =
+      this.currentDelta;
+
+    this.cards.forEach(
+      (card, index) => {
+        const offset =
+          this.getOffset(index);
+
+        this.applyCardPosition(
+          card,
+          offset,
+          delta,
+          false
+        );
+      }
+    );
+  };
+
+  private handlePointerUp = (
+    event: PointerEvent
+  ) => {
+    if (!this.dragging) {
+      return;
+    }
+
+    this.dragging = false;
+
+    if (
+      this.stage.hasPointerCapture(
+        event.pointerId
+      )
+    ) {
+      this.stage.releasePointerCapture(
+        event.pointerId
+      );
+    }
+
+    this.stage.style.cursor =
+      "grab";
+
+    const delta =
+      this.currentDelta;
+
+    this.currentDelta = 0;
+
+    if (
+      Math.abs(delta) > 70
+    ) {
+      if (delta < 0) {
+        this.goTo(
+          this.activeIndex + 1
+        );
+      } else {
+        this.goTo(
+          this.activeIndex - 1
+        );
+      }
+
+      return;
+    }
+
+    this.update(true);
+  };
+
+  private handleKeyboard = (
+    event: KeyboardEvent
+  ) => {
+    if (
+      event.key !== "ArrowLeft" &&
+      event.key !== "ArrowRight"
+    ) {
+      return;
+    }
+
+    /*
+     * Don't hijack arrow keys while
+     * the user is interacting with
+     * another control.
+     */
+    const target =
+      event.target as HTMLElement | null;
+
+    if (
+      target?.matches(
+        "input, textarea, select"
+      )
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (
+      event.key === "ArrowLeft"
+    ) {
+      this.goTo(
+        this.activeIndex - 1
+      );
+    }
+
+    if (
+      event.key === "ArrowRight"
+    ) {
+      this.goTo(
+        this.activeIndex + 1
+      );
+    }
+  };
+}
+
+  /*
+   * ==================================================
+   * INDIA CONTENT CONTROLLER
+   * ==================================================
+   */
+
+  class IndiaContentController {
+    private root: HTMLElement;
+
+    private worldId: string;
+
+    private carousels: PeopleCarousel[] =
+      [];
+
+    constructor(
+      root: HTMLElement
+    ) {
+      this.root = root;
+
+      /*
+       * Get world ID from the
+       * rendered section.
+       */
+      this.worldId =
+        root.dataset.worldId ??
+        "india";
+
+      /*
+       * Initialize carousels.
+       */
+      this.root
+        .querySelectorAll<HTMLElement>(
+          "[data-carousel-section]"
+        )
+        .forEach(
+          (section) => {
+            this.carousels.push(
+              new PeopleCarousel(
+                section
+              )
+            );
+          }
+        );
+
+      /*
+       * Listen for timeline changes
+       * after initialization.
+       */
+      document.addEventListener(
+        "aion:timeline-change",
+        this.handleTimelineChange
+      );
+
+      /*
+       * ----------------------------------------------
+       * IMPORTANT
+       * ----------------------------------------------
+       *
+       * Do NOT depend on the initial
+       * timeline event.
+       *
+       * The TimelineController and
+       * ContentController can initialize
+       * in either order.
+       *
+       * Read localStorage directly.
+       */
+      const storedEra =
+        getStoredEra(
+          this.worldId
+        );
+
+      const initialEra =
+        storedEra ??
+        root.dataset.defaultEra ??
+        "";
+
+      /*
+       * Immediately show the same era
+       * that TimelineController restored.
+       */
+      this.updateEra(
+        initialEra
+      );
+    }
+
+    /*
+     * ----------------------------------------------
+     * TIMELINE CHANGE
+     * ----------------------------------------------
+     */
+
+    private handleTimelineChange = (
+      event: Event
+    ) => {
+      const customEvent =
+        event as CustomEvent<{
+          worldId: string;
+          eraId: string;
+        }>;
+
+      /*
+       * Ignore events belonging to
+       * another world.
+       */
+      if (
+        customEvent.detail
+          .worldId !==
+        this.worldId
+      ) {
+        return;
+      }
+
+      this.updateEra(
+        customEvent.detail.eraId
+      );
+    };
+
+    /*
+     * ----------------------------------------------
+     * UPDATE ACTIVE ERA
+     * ----------------------------------------------
+     */
+
+    private updateEra(
+      eraId: string
+    ) {
+      if (!eraId) {
+        return;
+      }
+
+      this.root
+        .querySelectorAll<HTMLElement>(
+          "[data-era-content]"
+        )
+        .forEach(
+          (element) => {
+            const active =
+              element.dataset
+                .eraContent ===
+              eraId;
+
+            element.classList.toggle(
+              "is-active",
+              active
+            );
+          }
+        );
+    }
+
+    /*
+     * ----------------------------------------------
+     * CLEANUP
+     * ----------------------------------------------
+     */
+
+    public destroy() {
+      document.removeEventListener(
+        "aion:timeline-change",
+        this.handleTimelineChange
+      );
+    }
+  }
+
+  /*
+   * ==================================================
+   * INITIALIZE
+   * ==================================================
+   */
+
+  const roots =
+    document.querySelectorAll<HTMLElement>(
+      "[data-india-content]"
+    );
+
+  roots.forEach(
+    (root) =>
+      new IndiaContentController(
+        root
+      )
+  );
+</script>

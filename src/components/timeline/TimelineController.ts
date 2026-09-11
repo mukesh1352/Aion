@@ -8,6 +8,11 @@ import {
   type WorldTimeline,
 } from "../../lib/timeline";
 
+import {
+  getStoredEra,
+  setStoredEra,
+} from "../../lib/timeline-state";
+
 import { TimelineThree } from "./TimelineThree";
 
 export class TimelineController {
@@ -36,8 +41,7 @@ export class TimelineController {
   constructor(root: HTMLElement) {
     this.root = root;
 
-    const worldId =
-      root.dataset.worldId;
+    const worldId = root.dataset.worldId;
 
     if (!worldId) {
       throw new Error(
@@ -45,11 +49,55 @@ export class TimelineController {
       );
     }
 
-    this.timeline =
-      getTimeline(worldId);
+    this.timeline = getTimeline(worldId);
+
+    /*
+     * --------------------------------------------------
+     * RESTORE PREVIOUS ERA
+     * --------------------------------------------------
+     *
+     * Priority:
+     *
+     * 1. Previously selected era
+     * 2. Timeline default year
+     * 3. First available era
+     *
+     * This is the important part for refresh.
+     */
+
+    const storedEraId =
+      getStoredEra(this.timeline.id);
+
+    const storedEra = storedEraId
+      ? this.timeline.eras.find(
+          (era) =>
+            era.id === storedEraId
+        )
+      : undefined;
+
+    const defaultEra =
+      storedEra ??
+      this.findEraAtYear(
+        this.timeline.defaultYear
+      ) ??
+      this.timeline.eras[0];
+
+    if (!defaultEra) {
+      throw new Error(
+        `AION: Timeline "${this.timeline.id}" has no eras.`
+      );
+    }
+
+    this.currentEra = defaultEra;
 
     this.selectedYear =
-      this.timeline.defaultYear;
+      getEraCenter(defaultEra);
+
+    /*
+     * --------------------------------------------------
+     * FIND ELEMENTS
+     * --------------------------------------------------
+     */
 
     const yearElement =
       root.querySelector<HTMLElement>(
@@ -106,8 +154,7 @@ export class TimelineController {
       );
     }
 
-    this.yearElement =
-      yearElement;
+    this.yearElement = yearElement;
 
     this.currentLabelElement =
       labelElement;
@@ -123,27 +170,60 @@ export class TimelineController {
         threeContainer
       );
 
+    /*
+     * --------------------------------------------------
+     * INITIALIZE
+     * --------------------------------------------------
+     */
+
     this.render();
 
     this.bindEvents();
 
     /*
-     * Initial state.
+     * Apply restored era to the DOM.
      */
-    this.updateFromYear(
-      this.selectedYear,
+    this.updateFromEra(
+      defaultEra,
       false
     );
 
     /*
-     * Put Three.js marker at the
-     * initial year immediately.
+     * IMPORTANT:
+     *
+     * The timeline contains five
+     * equally-spaced visual positions.
+     *
+     * Therefore use era progress,
+     * not historical-year progress.
      */
     this.three.setProgress(
-      this.getYearProgress(
-        this.selectedYear
+      this.getEraProgress(
+        defaultEra
       ),
       true
+    );
+
+    /*
+     * Persist the resolved initial era.
+     *
+     * This also ensures a valid fallback
+     * is stored for first-time visitors.
+     */
+    setStoredEra(
+      this.timeline.id,
+      defaultEra.id
+    );
+
+    /*
+     * Notify the rest of AION.
+     *
+     * Atmosphere/content can react to
+     * the restored era.
+     */
+    this.dispatchTimelineEvent(
+      defaultEra,
+      this.selectedYear
     );
   }
 
@@ -192,8 +272,7 @@ export class TimelineController {
         "button"
       );
 
-    button.type =
-      "button";
+    button.type = "button";
 
     button.className =
       "timeline-node";
@@ -264,18 +343,15 @@ export class TimelineController {
     );
 
     /*
-     * Small entrance animation.
+     * Entrance animation.
      */
-    animate(
-      button,
-      {
-        opacity: [0, 1],
-        translateY: [10, 0],
-        delay: index * 70,
-        duration: 500,
-        ease: "out(3)",
-      }
-    );
+    animate(button, {
+      opacity: [0, 1],
+      translateY: [10, 0],
+      delay: index * 70,
+      duration: 500,
+      ease: "out(3)",
+    });
 
     return button;
   }
@@ -288,7 +364,7 @@ export class TimelineController {
 
   private bindEvents() {
     /*
-     * Clicking an era selects that era.
+     * Clicking an era.
      */
     this.nodesContainer.addEventListener(
       "click",
@@ -463,14 +539,13 @@ export class TimelineController {
 
     this.dragPointerId = null;
 
-    document.body.style.cursor =
-      "";
+    document.body.style.cursor = "";
 
     /*
-     * Snap to the era containing the
-     * selected year.
+     * Snap to the current era.
      */
     const era =
+      this.currentEra ??
       this.findEraAtYear(
         this.selectedYear
       );
@@ -479,117 +554,108 @@ export class TimelineController {
       return;
     }
 
-    const center =
+    this.selectEra(era);
+  }
+
+  private updateFromPointer(
+    clientX: number
+  ) {
+    const axis =
+      this.root.querySelector<HTMLElement>(
+        ".timeline-axis"
+      );
+
+    if (!axis) {
+      return;
+    }
+
+    const rect =
+      axis.getBoundingClientRect();
+
+    if (rect.width <= 0) {
+      return;
+    }
+
+    /*
+     * Convert pointer position into
+     * visual timeline progress.
+     *
+     * 0 = Ancient
+     * 1 = Modern
+     */
+    let progress =
+      (clientX - rect.left) /
+      rect.width;
+
+    progress = Math.max(
+      0,
+      Math.min(1, progress)
+    );
+
+    /*
+     * Find nearest visual era.
+     */
+    const lastIndex =
+      this.timeline.eras.length - 1;
+
+    const index =
+      Math.round(
+        progress * lastIndex
+      );
+
+    const era =
+      this.timeline.eras[index];
+
+    if (!era) {
+      return;
+    }
+
+    const previousEra =
+      this.currentEra;
+
+    const year =
       getEraCenter(era);
 
     this.selectedYear =
-      center;
+      year;
 
-    this.updateFromYear(
-      center,
-      true
-    );
-  }
-private updateFromPointer(
-  clientX: number
-) {
-  const axis =
-    this.root.querySelector<HTMLElement>(
-      ".timeline-axis"
-    );
+    this.currentEra =
+      era;
 
-  if (!axis) {
-    return;
-  }
-
-  const rect =
-    axis.getBoundingClientRect();
-
-  if (rect.width <= 0) {
-    return;
-  }
-
-  /*
-   * Convert pointer position into
-   * visual timeline progress.
-   *
-   * 0 = Ancient
-   * 1 = Modern
-   */
-  let progress =
-    (clientX - rect.left) /
-    rect.width;
-
-  progress = Math.max(
-    0,
-    Math.min(1, progress)
-  );
-
-  /*
-   * Find the closest of the five
-   * visual era positions.
-   */
-  const lastIndex =
-    this.timeline.eras.length - 1;
-
-  const index =
-    Math.round(
-      progress * lastIndex
+    /*
+     * Move Three.js to exactly the
+     * same visual position.
+     */
+    this.three.setProgress(
+      lastIndex === 0
+        ? 0.5
+        : index / lastIndex
     );
 
-  const era =
-    this.timeline.eras[index];
+    this.yearElement.textContent =
+      formatHistoricalYear(year);
 
-  if (!era) {
-    return;
-  }
+    this.currentLabelElement.textContent =
+      era.label;
 
-  /*
-   * The selected year is the center
-   * of the selected era.
-   */
-  const year =
-    getEraCenter(era);
-
-  this.selectedYear =
-    year;
-
-  this.currentEra =
-    era;
-
-  /*
-   * Move Three.js to the SAME visual
-   * position as the selected era.
-   */
-  this.three.setProgress(
-    lastIndex === 0
-      ? 0.5
-      : index / lastIndex
-  );
-
-  this.yearElement.textContent =
-    formatHistoricalYear(year);
-
-  this.currentLabelElement.textContent =
-    era.label;
-
-  this.updateActiveEra(
-    era
-  );
-
-  /*
-   * Don't dispatch repeatedly unless
-   * the selected era actually changes.
-   */
-  if (
-    this.currentEra?.id === era.id
-  ) {
-    this.dispatchTimelineEvent(
-      era,
-      year
+    this.updateActiveEra(
+      era
     );
+
+    /*
+     * Only dispatch when the era
+     * actually changes.
+     */
+    if (
+      previousEra?.id !== era.id
+    ) {
+      this.dispatchTimelineEvent(
+        era,
+        year
+      );
+    }
   }
-}
+
   /*
    * --------------------------------------------------
    * ERA SELECTION
@@ -602,59 +668,91 @@ private updateFromPointer(
     const year =
       getEraCenter(era);
 
+    this.currentEra =
+      era;
+
     this.selectedYear =
       year;
 
-    this.updateFromYear(
-      year,
+    /*
+     * SAVE FIRST.
+     *
+     * This is the value that will be
+     * restored after refresh.
+     */
+    setStoredEra(
+      this.timeline.id,
+      era.id
+    );
+
+    /*
+     * Update timeline UI and Three.js.
+     */
+    this.updateFromEra(
+      era,
       true
     );
   }
 
   /*
    * --------------------------------------------------
-   * UPDATE STATE
+   * UPDATE ERA
    * --------------------------------------------------
    */
 
-  private updateFromYear(
-    year: number,
+  private updateFromEra(
+    era: TimelineEra,
     dispatch: boolean
   ) {
-    const era =
-      this.findEraAtYear(
-        year
-      );
-
     this.currentEra =
       era;
 
+    this.selectedYear =
+      getEraCenter(era);
+
+    /*
+     * Update year.
+     */
     this.yearElement.textContent =
       formatHistoricalYear(
-        year
+        this.selectedYear
       );
 
+    /*
+     * Update era label.
+     */
     this.currentLabelElement.textContent =
-      era?.label ??
-      this.timeline.name;
+      era.label;
 
+    /*
+     * Update active timeline node.
+     */
     this.updateActiveEra(
       era
     );
 
+    /*
+     * IMPORTANT:
+     *
+     * Use visual era progress:
+     *
+     * Ancient       0
+     * Classical     .25
+     * Medieval      .50
+     * Early Modern  .75
+     * Modern        1
+     */
     this.three.setProgress(
-      this.getYearProgress(
-        year
-      )
+      this.getEraProgress(
+        era
+      ),
+      dispatch === false
     );
 
-    if (
-      dispatch &&
-      era
-    ) {
+    if (dispatch) {
       this.dispatchTimelineEvent(
         era,
-        year
+        this.selectedYear
       );
     }
   }
@@ -675,10 +773,13 @@ private updateFromPointer(
 
     elements.forEach(
       (element) => {
+        const isActive =
+          element.dataset.nodeId ===
+          selectedEra?.id;
+
         element.classList.toggle(
           "is-active",
-          element.dataset.nodeId ===
-            selectedEra?.id
+          isActive
         );
       }
     );
@@ -686,8 +787,39 @@ private updateFromPointer(
 
   /*
    * --------------------------------------------------
-   * YEAR / POSITION
+   * VISUAL ERA PROGRESS
    * --------------------------------------------------
+   */
+
+  private getEraProgress(
+    era: TimelineEra
+  ) {
+    const index =
+      this.timeline.eras.findIndex(
+        (item) =>
+          item.id === era.id
+      );
+
+    const lastIndex =
+      this.timeline.eras.length - 1;
+
+    if (
+      index < 0 ||
+      lastIndex <= 0
+    ) {
+      return 0.5;
+    }
+
+    return index / lastIndex;
+  }
+
+  /*
+   * --------------------------------------------------
+   * HISTORICAL YEAR PROGRESS
+   * --------------------------------------------------
+   *
+   * Kept for future use if you later
+   * want a continuous year slider.
    */
 
   private getYearProgress(
@@ -721,11 +853,10 @@ private updateFromPointer(
 
   private findEraAtYear(
     year: number
-  ) {
+  ): TimelineEra | undefined {
     /*
-     * First find the era whose
-     * historical range contains
-     * the selected year.
+     * First find the era containing
+     * the historical year.
      */
     const containing =
       this.timeline.eras.find(
@@ -739,7 +870,7 @@ private updateFromPointer(
     }
 
     /*
-     * Otherwise use the closest
+     * Otherwise find the closest
      * era center.
      */
     return this.timeline.eras.reduce(
@@ -765,7 +896,8 @@ private updateFromPointer(
           nearestDistance
           ? era
           : nearest;
-      }
+      },
+      this.timeline.eras[0]
     );
   }
 
@@ -779,6 +911,14 @@ private updateFromPointer(
     era: TimelineEra,
     year: number
   ) {
+    /*
+     * Always persist the current era.
+     */
+    setStoredEra(
+      this.timeline.id,
+      era.id
+    );
+
     this.root.dispatchEvent(
       new CustomEvent(
         "aion:timeline-change",

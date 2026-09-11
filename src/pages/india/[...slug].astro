@@ -1,0 +1,253 @@
+---
+import {
+  getCollection,
+  render,
+} from "astro:content";
+
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  const entries = await getCollection(
+    "historicalContent"
+  );
+
+  return entries.map((entry) => ({
+    params: {
+      slug: entry.id,
+    },
+    props: {
+      entry,
+    },
+  }));
+}
+
+const { entry } = Astro.props;
+
+const { Content } = await render(entry);
+
+const data = entry.data;
+---
+
+<Layout
+  title={`${data.title} — AION`}
+  description={data.summary}
+>
+  <main class="historical-entry">
+
+    <header class="historical-entry-header">
+
+      <a
+        href="/india"
+        class="historical-back"
+      >
+        ← INDIA
+      </a>
+
+      <div class="historical-entry-meta">
+
+        <span class="historical-type">
+          {data.type.toUpperCase()}
+        </span>
+
+        <span class="historical-status">
+          {data.status
+            .replaceAll("-", " ")
+            .toUpperCase()}
+        </span>
+
+      </div>
+
+      <h1>
+        {data.title}
+      </h1>
+
+      {
+        data.subtitle && (
+          <p class="historical-subtitle">
+            {data.subtitle}
+          </p>
+        )
+      }
+
+      <p class="historical-summary">
+        {data.summary}
+      </p>
+
+      {
+        data.tags &&
+        data.tags.length > 0 && (
+          <div class="historical-tags">
+            {data.tags.map((tag) => (
+              <span>
+                {tag}
+              </span>
+            ))}
+          </div>
+        )
+      }
+
+    </header>
+
+    <article class="historical-entry-body">
+      <Content />
+    </article>
+
+  </main>
+</Layout>
+
+<style>
+  .historical-entry {
+    min-height: 100vh;
+    background:
+      radial-gradient(
+        circle at 50% 0%,
+        rgba(200, 161, 90, 0.08),
+        transparent 40%
+      ),
+      #080a0d;
+    color: #e8e3d8;
+  }
+
+  .historical-entry-header {
+    width: min(1000px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 48px 0 72px;
+  }
+
+  .historical-back {
+    display: inline-block;
+    margin-bottom: 80px;
+
+    color: #c8a15a;
+    text-decoration: none;
+
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+  }
+
+  .historical-entry-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .historical-type,
+  .historical-status {
+    padding: 7px 11px;
+
+    border: 1px solid
+      rgba(200, 161, 90, 0.25);
+
+    border-radius: 999px;
+
+    color: rgba(232, 227, 216, 0.7);
+
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+
+  .historical-entry-header h1 {
+    margin: 0;
+
+    font-size: clamp(
+      48px,
+      8vw,
+      100px
+    );
+
+    line-height: 0.95;
+    letter-spacing: -0.045em;
+  }
+
+  .historical-subtitle {
+    margin: 22px 0 0;
+
+    color: #c8a15a;
+
+    font-size: 22px;
+  }
+
+  .historical-summary {
+    max-width: 720px;
+    margin-top: 30px;
+
+    color: rgba(232, 227, 216, 0.65);
+
+    font-size: 18px;
+    line-height: 1.7;
+  }
+
+  .historical-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 28px;
+  }
+
+  .historical-tags span {
+    padding: 8px 12px;
+
+    background: #15181d;
+
+    border: 1px solid
+      rgba(232, 227, 216, 0.08);
+
+    border-radius: 999px;
+
+    color: rgba(232, 227, 216, 0.65);
+
+    font-size: 12px;
+  }
+
+  .historical-entry-body {
+    width: min(800px, calc(100% - 48px));
+    margin: 0 auto;
+    padding-bottom: 120px;
+
+    color: rgba(232, 227, 216, 0.82);
+
+    font-size: 18px;
+    line-height: 1.85;
+  }
+
+  .historical-entry-body :global(h2) {
+    margin-top: 72px;
+
+    color: #e8e3d8;
+
+    font-size: 32px;
+  }
+
+  .historical-entry-body :global(h3) {
+    margin-top: 48px;
+
+    color: #e8e3d8;
+  }
+
+  .historical-entry-body :global(p) {
+    margin: 20px 0;
+  }
+
+  .historical-entry-body :global(ul) {
+    padding-left: 24px;
+  }
+
+  .historical-entry-body :global(li) {
+    margin: 8px 0;
+  }
+
+  @media (max-width: 700px) {
+    .historical-entry-header {
+      padding-top: 32px;
+    }
+
+    .historical-back {
+      margin-bottom: 50px;
+    }
+
+    .historical-entry-header h1 {
+      font-size: 54px;
+    }
+  }
+</style>
