@@ -2,6 +2,7 @@
   "name": "certain-cluster",
   "version": "0.0.1",
   "dependencies": {
+    "animejs": "^4.5.0",
     "astro": "^7.3.2",
     "maplibre-gl": "^6.9.0",
     "three": "^0.186.0"
