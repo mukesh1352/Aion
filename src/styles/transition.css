@@ -1,0 +1,159 @@
+/* =========================================================
+   AION TRANSITION ENGINE
+   ========================================================= */
+
+.aion-transition {
+
+  position: fixed;
+
+  inset: 0;
+
+  width: 100vw;
+  height: 100vh;
+
+  z-index: 99999;
+
+  overflow: hidden;
+
+  /*
+   * THIS IS THE DEFAULT STATE.
+   *
+   * It must be completely invisible.
+   */
+
+  visibility: hidden;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+}
+
+
+/* =========================================================
+   ACTIVE
+   ========================================================= */
+
+.aion-transition.is-active {
+
+  visibility: visible;
+
+  opacity: 1;
+
+  pointer-events: none;
+
+}
+
+
+/* =========================================================
+   CANVAS
+   ========================================================= */
+
+.aion-transition canvas {
+
+  position: absolute;
+
+  inset: 0;
+
+  display: block;
+
+  width: 100vw;
+  height: 100vh;
+
+  margin: 0;
+  padding: 0;
+
+}
+
+
+/* =========================================================
+   FILM GRAIN
+   ========================================================= */
+
+.aion-transition-grain {
+
+  position: absolute;
+
+  inset: -50%;
+
+  pointer-events: none;
+
+  opacity: 0.035;
+
+  background-image:
+    url(
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E"
+    );
+
+  animation:
+    aion-transition-grain
+    0.18s
+    steps(2)
+    infinite;
+
+}
+
+
+@keyframes aion-transition-grain {
+
+  0% {
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      );
+  }
+
+  25% {
+    transform:
+      translate3d(
+        -2%,
+        1%,
+        0
+      );
+  }
+
+  50% {
+    transform:
+      translate3d(
+        1%,
+        -2%,
+        0
+      );
+  }
+
+  75% {
+    transform:
+      translate3d(
+        2%,
+        2%,
+        0
+      );
+  }
+
+  100% {
+    transform:
+      translate3d(
+        0,
+        0,
+        0
+      );
+  }
+
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
+
+  .aion-transition-grain {
+    animation: none;
+  }
+
+}

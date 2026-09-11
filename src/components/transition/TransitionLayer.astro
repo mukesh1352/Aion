@@ -1,0 +1,99 @@
+<div
+  id="aion-transition"
+  class="aion-transition"
+  aria-hidden="true"
+>
+  <canvas id="aion-transition-canvas"></canvas>
+
+  <div class="aion-transition-grain"></div>
+</div>
+
+<script>
+  import { TransitionEngine } from "../../lib/transition/TransitionEngine";
+  import type { TransitionType } from "../../lib/transition/transition-types";
+
+  const layer = document.getElementById("aion-transition");
+  const canvas = document.getElementById("aion-transition-canvas");
+
+  if (!(layer instanceof HTMLElement)) {
+    throw new Error("AION transition layer is missing.");
+  }
+
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error("AION transition canvas is missing.");
+  }
+
+  console.log("[AION] Transition layer loaded");
+
+  const engine = new TransitionEngine(canvas, layer);
+
+  (
+    window as typeof window & {
+      AIONTransition?: TransitionEngine;
+    }
+  ).AIONTransition = engine;
+
+  engine.initialize();
+
+  console.log("[AION] Transition engine initialized");
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    if (
+      event.button !== 0 ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    const target = event.target;
+
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const link = target.closest("a[data-aion-transition]");
+
+    if (!(link instanceof HTMLAnchorElement)) {
+      return;
+    }
+
+    const href = link.getAttribute("href");
+
+    if (!href || href.startsWith("#")) {
+      return;
+    }
+
+    console.log("[AION] Transition click:", href);
+
+    event.preventDefault();
+
+    const type =
+      link.dataset.aionTransition as
+        | TransitionType
+        | undefined;
+
+    engine.enter({
+      path: href,
+      type,
+
+      longitude: link.dataset.longitude
+        ? Number(link.dataset.longitude)
+        : undefined,
+
+      latitude: link.dataset.latitude
+        ? Number(link.dataset.latitude)
+        : undefined,
+
+      zoom: link.dataset.zoom
+        ? Number(link.dataset.zoom)
+        : undefined,
+    });
+  });
+</script>
