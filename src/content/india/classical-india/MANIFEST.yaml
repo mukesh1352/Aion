@@ -1,0 +1,12 @@
+# AION Classical India — Batch 1 Full
+
+Exactly 15 separate MDX files are included in each requested category:
+
+- PEOPLE: 15
+- EVENTS: 15
+- PLACES: 15
+- STORIES: 15
+- FACTS: 15
+- OVERVIEW: 1
+
+Every entity is stored as its own `.mdx` file under the requested folder structure.

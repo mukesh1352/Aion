@@ -1,0 +1,1714 @@
+---
+import {
+  resolveHistoricalExperience,
+} from "../../lib/experience/resolver";
+
+interface Props {
+  worldId: string;
+  eraId: string;
+  contentType?: string;
+}
+
+const {
+  worldId,
+  eraId,
+  contentType = "overview",
+} = Astro.props;
+
+const experience =
+  resolveHistoricalExperience(
+    worldId,
+    eraId,
+    contentType,
+  );
+
+/* =========================================================
+   ERA -> VIBE (SERVER-SIDE, FOR NO-FLASH INITIAL PAINT)
+
+   This is a standalone fallback so the component works even
+   if `resolver.ts` doesn't yet return a `vibe`. If your
+   resolver already knows the era's cultural period, prefer
+   wiring `experience.vibe` through instead and deleting this.
+
+   A "vibe" controls PHYSICAL behavior, not just color:
+   - firelight   : Paleolithic / Stone Age        -> rising embers, torchlight flicker
+   - desertHeat  : Bronze Age / Egypt / Mesopotamia -> drifting sand, heat shimmer
+   - marbleHall  : Classical Greece / Rome         -> dust suspended in light shafts
+   - candlelight : Medieval                        -> floating motes, candle flicker
+   - painterly   : Renaissance / Baroque           -> slow golden light bloom
+   - oldFilm     : Industrial / Victorian / Colonial -> sepia grain, film jitter
+   - archive     : Modern / Contemporary           -> quiet, minimal dust
+   ========================================================= */
+
+type EraVibe =
+  | "firelight"
+  | "desertHeat"
+  | "marbleHall"
+  | "candlelight"
+  | "painterly"
+  | "oldFilm"
+  | "archive";
+
+const ERA_KEYWORD_VIBES: [RegExp, EraVibe][] = [
+  [/paleo|stone.?age|prehistor|ice.?age|neolithic/i, "firelight"],
+  [/egypt|bronze.?age|mesopotam|sumer|babylon|pharaoh/i, "desertHeat"],
+  [/gree|rome|roman|classical|antiquit|hellenis/i, "marbleHall"],
+  [/medieval|middle.?ages|feudal|byzant|crusad/i, "candlelight"],
+  [/renaissance|baroque/i, "painterly"],
+  [/industrial|victorian|colonial|19th/i, "oldFilm"],
+  [/modern|contemporary|20th|21st/i, "archive"],
+];
+
+const MATERIAL_VIBE_FALLBACK: Record<string, EraVibe> = {
+  stone: "marbleHall",
+  clay: "desertHeat",
+  parchment: "candlelight",
+  scroll: "candlelight",
+  paper: "painterly",
+  archival: "archive",
+};
+
+function resolveEraVibe(eraId: string, material: string): EraVibe {
+  for (const [pattern, vibe] of ERA_KEYWORD_VIBES) {
+    if (pattern.test(eraId)) return vibe;
+  }
+  return MATERIAL_VIBE_FALLBACK[material] ?? "archive";
+}
+
+const eraVibe = resolveEraVibe(eraId, experience.material);
+---
+
+<div
+  class="historical-material"
+  data-historical-material
+  data-world-id={worldId}
+  data-era-id={eraId}
+  data-content-type={contentType}
+  data-material={experience.material}
+  data-texture={experience.texture}
+  data-heading-treatment={experience.titleMotion}
+  data-atmosphere={experience.atmosphere}
+  data-atmosphere-intensity={experience.intensity}
+  data-era-vibe={eraVibe}
+  aria-hidden="true"
+>
+  <div class="historical-material-base"></div>
+  <div class="historical-material-light"></div>
+  <div class="historical-material-grain"></div>
+  <div class="historical-material-fibers"></div>
+  <div class="historical-material-wear"></div>
+  <div class="historical-material-atmosphere"></div>
+  <div class="historical-material-vibe-tint"></div>
+  <canvas class="historical-material-particles" data-historical-particles></canvas>
+  <div class="historical-material-vignette"></div>
+</div>
+
+<style>
+
+/* =========================================================
+   ROOT
+   ========================================================= */
+
+.historical-material {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+
+  z-index: 0;
+
+  overflow: hidden;
+  pointer-events: none;
+
+  background: transparent;
+
+  isolation: isolate;
+}
+
+
+/* =========================================================
+   COMMON LAYER
+   ========================================================= */
+
+.historical-material-base,
+.historical-material-light,
+.historical-material-grain,
+.historical-material-fibers,
+.historical-material-wear,
+.historical-material-atmosphere,
+.historical-material-vibe-tint,
+.historical-material-vignette {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  pointer-events: none;
+}
+
+.historical-material-particles {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  pointer-events: none;
+
+  z-index: 7;
+
+  opacity: 0;
+
+  transition: opacity 1600ms ease;
+}
+
+.historical-material.is-particles-ready
+  .historical-material-particles {
+
+  opacity: 1;
+}
+
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+.historical-material-base {
+  z-index: 0;
+
+  transform: scale(1.035);
+
+  transition:
+    background 1400ms ease,
+    filter 1400ms ease;
+}
+
+
+/* =========================================================
+   STONE
+   ========================================================= */
+
+.historical-material[data-material="stone"]
+  .historical-material-base {
+
+  background:
+
+    radial-gradient(
+      ellipse at 34% 28%,
+      rgba(188, 168, 126, 0.065),
+      transparent 38%
+    ),
+
+    radial-gradient(
+      ellipse at 66% 70%,
+      rgba(85, 78, 63, 0.16),
+      transparent 42%
+    ),
+
+    radial-gradient(
+      ellipse at center,
+      transparent 32%,
+      rgba(0, 0, 0, 0.34) 100%
+    ),
+
+    linear-gradient(
+      125deg,
+      #1b1c1b 0%,
+      #171817 30%,
+      #141515 58%,
+      #101112 82%,
+      #0a0c0d 100%
+    );
+}
+
+
+/* =========================================================
+   CLAY
+   ========================================================= */
+
+.historical-material[data-material="clay"]
+  .historical-material-base {
+
+  background:
+
+    radial-gradient(
+      ellipse at 38% 30%,
+      rgba(196, 120, 74, 0.11),
+      transparent 40%
+    ),
+
+    radial-gradient(
+      ellipse at 64% 68%,
+      rgba(120, 72, 42, 0.17),
+      transparent 46%
+    ),
+
+    radial-gradient(
+      ellipse at center,
+      transparent 30%,
+      rgba(40, 22, 12, 0.38) 100%
+    ),
+
+    linear-gradient(
+      124deg,
+      #342116 0%,
+      #2f1e10 28%,
+      #28190d 55%,
+      #1e130a 80%,
+      #140b06 100%
+    );
+}
+
+
+/* =========================================================
+   PARCHMENT
+   Medieval / Manuscript
+   ========================================================= */
+
+.historical-material[data-material="parchment"]
+  .historical-material-base {
+
+  background:
+
+    radial-gradient(
+      ellipse at 46% 38%,
+      rgba(190, 157, 103, 0.095),
+      transparent 42%
+    ),
+
+    radial-gradient(
+      ellipse at 68% 72%,
+      rgba(116, 79, 43, 0.10),
+      transparent 45%
+    ),
+
+    radial-gradient(
+      ellipse at center,
+      transparent 36%,
+      rgba(60, 40, 23, 0.18) 62%,
+      rgba(28, 20, 13, 0.58) 100%
+    ),
+
+    linear-gradient(
+      118deg,
+      #30281d 0%,
+      #2b241b 20%,
+      #282119 42%,
+      #241d16 64%,
+      #1d1712 82%,
+      #13100d 100%
+    );
+}
+
+
+/* =========================================================
+   SCROLL
+   ========================================================= */
+
+.historical-material[data-material="scroll"]
+  .historical-material-base {
+
+  background:
+
+    radial-gradient(
+      ellipse at 40% 32%,
+      rgba(196, 168, 108, 0.12),
+      transparent 44%
+    ),
+
+    radial-gradient(
+      ellipse at center,
+      transparent 34%,
+      rgba(64, 44, 22, 0.34) 100%
+    ),
+
+    linear-gradient(
+      122deg,
+      #332918 0%,
+      #2d2517 30%,
+      #272015 58%,
+      #1e190f 82%,
+      #131109 100%
+    );
+}
+
+
+/* =========================================================
+   PAPER
+   ========================================================= */
+
+.historical-material[data-material="paper"]
+  .historical-material-base {
+
+  background:
+
+    radial-gradient(
+      ellipse at 42% 32%,
+      rgba(213, 193, 154, 0.10),
+      transparent 48%
+    ),
+
+    radial-gradient(
+      ellipse at center,
+      transparent 38%,
+      rgba(78, 65, 47, 0.26) 100%
+    ),
+
+    linear-gradient(
+      120deg,
+      #2c2a25 0%,
+      #27241f 32%,
+      #211f1b 58%,
+      #181817 100%
+    );
+}
+
+
+/* =========================================================
+   ARCHIVAL
+   ========================================================= */
+
+.historical-material[data-material="archival"]
+  .historical-material-base {
+
+  background:
+
+    radial-gradient(
+      ellipse at 46% 30%,
+      rgba(194, 190, 172, 0.08),
+      transparent 48%
+    ),
+
+    radial-gradient(
+      ellipse at center,
+      transparent 40%,
+      rgba(0, 0, 0, 0.34) 100%
+    ),
+
+    linear-gradient(
+      125deg,
+      #222421 0%,
+      #1c1e1c 35%,
+      #181a19 65%,
+      #101211 100%
+    );
+}
+
+
+/* =========================================================
+   LIGHT
+   ========================================================= */
+
+.historical-material-light {
+  z-index: 1;
+
+  opacity: 0.42;
+
+  background:
+
+    radial-gradient(
+      ellipse at 31% 22%,
+      rgba(225, 192, 126, 0.055),
+      transparent 31%
+    ),
+
+    radial-gradient(
+      ellipse at 69% 64%,
+      rgba(169, 128, 72, 0.045),
+      transparent 37%
+    );
+
+  filter: blur(55px);
+
+  transform: scale(1.15);
+
+  will-change:
+    transform,
+    opacity;
+
+  transition:
+    opacity 1400ms ease;
+}
+
+
+.historical-material[data-material="parchment"]
+  .historical-material-light {
+
+  opacity: 0.52;
+
+  background:
+
+    radial-gradient(
+      ellipse at 30% 23%,
+      rgba(226, 190, 121, 0.075),
+      transparent 32%
+    ),
+
+    radial-gradient(
+      ellipse at 68% 63%,
+      rgba(165, 116, 60, 0.055),
+      transparent 40%
+    );
+
+  filter: blur(58px);
+}
+
+
+.historical-material[data-material="stone"]
+  .historical-material-light {
+
+  opacity: 0.38;
+
+  background:
+
+    radial-gradient(
+      ellipse at 34% 28%,
+      rgba(207, 190, 146, 0.055),
+      transparent 32%
+    );
+}
+
+
+.historical-material[data-material="clay"]
+  .historical-material-light {
+
+  opacity: 0.55;
+
+  background:
+
+    radial-gradient(
+      ellipse at 34% 26%,
+      rgba(224, 140, 78, 0.11),
+      transparent 34%
+    ),
+
+    radial-gradient(
+      ellipse at 68% 60%,
+      rgba(168, 96, 48, 0.075),
+      transparent 40%
+    );
+
+  filter: blur(50px);
+}
+
+
+.historical-material[data-material="scroll"]
+  .historical-material-light {
+
+  opacity: 0.58;
+
+  background:
+
+    radial-gradient(
+      ellipse at 40% 22%,
+      rgba(232, 190, 120, 0.085),
+      transparent 34%
+    ),
+
+    radial-gradient(
+      ellipse at 60% 66%,
+      rgba(176, 132, 66, 0.055),
+      transparent 38%
+    );
+
+  filter: blur(58px);
+}
+
+
+/* =========================================================
+   GRAIN
+   ========================================================= */
+
+.historical-material-grain {
+  z-index: 2;
+
+  opacity: 0.19;
+
+  background-image:
+
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='aionNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='4' seed='8' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23aionNoise)' opacity='.72'/%3E%3C/svg%3E");
+
+  background-size: 280px 280px;
+
+  mix-blend-mode: soft-light;
+
+  transform: scale(1.12);
+
+  will-change:
+    transform,
+    opacity;
+}
+
+
+.historical-material[data-material="parchment"]
+  .historical-material-grain {
+
+  opacity: 0.30;
+
+  mix-blend-mode: multiply;
+
+  background-size: 230px 230px;
+}
+
+
+.historical-material[data-material="stone"]
+  .historical-material-grain {
+
+  opacity: 0.26;
+
+  mix-blend-mode: overlay;
+
+  background-size: 190px 190px;
+}
+
+
+.historical-material[data-material="clay"]
+  .historical-material-grain {
+
+  opacity: 0.38;
+
+  mix-blend-mode: overlay;
+
+  background-size: 150px 150px;
+}
+
+
+.historical-material[data-material="scroll"]
+  .historical-material-grain {
+
+  opacity: 0.29;
+
+  mix-blend-mode: multiply;
+
+  background-size: 210px 210px;
+}
+
+
+/* Old-film grain runs hotter and finer -- newsreel texture */
+.historical-material[data-era-vibe="oldFilm"]
+  .historical-material-grain {
+
+  opacity: 0.34;
+
+  mix-blend-mode: overlay;
+
+  background-size: 130px 130px;
+}
+
+
+/* =========================================================
+   FIBERS
+   ========================================================= */
+
+.historical-material-fibers {
+  z-index: 3;
+
+  opacity: 0;
+
+  background-image:
+
+    repeating-linear-gradient(
+      101deg,
+      transparent 0,
+      transparent 9px,
+      rgba(255, 232, 188, 0.016) 10px,
+      transparent 12px
+    ),
+
+    repeating-linear-gradient(
+      7deg,
+      transparent 0,
+      transparent 17px,
+      rgba(55, 37, 20, 0.030) 18px,
+      transparent 21px
+    );
+
+  background-size:
+    180px 180px,
+    230px 230px;
+
+  mix-blend-mode: soft-light;
+
+  will-change:
+    transform,
+    opacity;
+}
+
+
+.historical-material[data-material="parchment"]
+  .historical-material-fibers {
+
+  opacity: 0.68;
+}
+
+
+.historical-material[data-material="paper"]
+  .historical-material-fibers {
+
+  opacity: 0.34;
+}
+
+
+.historical-material[data-material="clay"]
+  .historical-material-fibers {
+
+  opacity: 0.42;
+
+  background-image:
+
+    repeating-linear-gradient(
+      115deg,
+      transparent 0,
+      transparent 26px,
+      rgba(20, 10, 4, 0.075) 27px,
+      transparent 30px
+    ),
+
+    repeating-linear-gradient(
+      35deg,
+      transparent 0,
+      transparent 34px,
+      rgba(20, 10, 4, 0.060) 35px,
+      transparent 38px
+    );
+
+  background-size:
+    200px 200px,
+    260px 260px;
+
+  mix-blend-mode: multiply;
+}
+
+
+.historical-material[data-material="scroll"]
+  .historical-material-fibers {
+
+  opacity: 0.48;
+
+  background-image:
+
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 5px,
+      rgba(255, 230, 180, 0.028) 6px,
+      transparent 7px
+    );
+
+  background-size: 40px 100%;
+
+  mix-blend-mode: soft-light;
+}
+
+
+/* Vertical scratch lines, characteristic of damaged old film reel */
+.historical-material[data-era-vibe="oldFilm"]
+  .historical-material-fibers {
+
+  opacity: 0.30;
+
+  background-image:
+
+    repeating-linear-gradient(
+      0.4deg,
+      transparent 0,
+      transparent 340px,
+      rgba(255, 250, 235, 0.05) 341px,
+      transparent 344px
+    ),
+
+    repeating-linear-gradient(
+      179.6deg,
+      transparent 0,
+      transparent 500px,
+      rgba(0, 0, 0, 0.06) 501px,
+      transparent 505px
+    );
+
+  background-size:
+    100% 100%,
+    100% 100%;
+
+  mix-blend-mode: overlay;
+}
+
+
+/* =========================================================
+   WEAR
+   ========================================================= */
+
+.historical-material-wear {
+  z-index: 4;
+
+  opacity: 0.56;
+
+  background:
+
+    radial-gradient(
+      ellipse at center,
+      transparent 43%,
+      rgba(0, 0, 0, 0.07) 62%,
+      rgba(0, 0, 0, 0.25) 82%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
+
+  mix-blend-mode: multiply;
+
+  will-change:
+    transform,
+    opacity;
+
+  transition:
+    opacity 1400ms ease;
+}
+
+
+.historical-material[data-material="parchment"]
+  .historical-material-wear {
+
+  opacity: 0.82;
+
+  background:
+
+    radial-gradient(
+      ellipse at center,
+      transparent 39%,
+      rgba(79, 53, 29, 0.055) 57%,
+      rgba(64, 42, 23, 0.15) 76%,
+      rgba(32, 21, 13, 0.58) 100%
+    ),
+
+    radial-gradient(
+      ellipse at 2% 48%,
+      rgba(62, 39, 20, 0.20),
+      transparent 24%
+    ),
+
+    radial-gradient(
+      ellipse at 98% 52%,
+      rgba(56, 35, 18, 0.22),
+      transparent 24%
+    );
+}
+
+
+.historical-material[data-material="clay"]
+  .historical-material-wear {
+
+  opacity: 0.82;
+
+  background:
+
+    radial-gradient(
+      ellipse at center,
+      transparent 37%,
+      rgba(56, 32, 16, 0.14) 58%,
+      rgba(43, 24, 11, 0.34) 78%,
+      rgba(20, 11, 5, 0.64) 100%
+    );
+}
+
+
+.historical-material[data-material="scroll"]
+  .historical-material-wear {
+
+  opacity: 0.84;
+
+  background:
+
+    radial-gradient(
+      ellipse at center,
+      transparent 41%,
+      rgba(60, 44, 22, 0.11) 60%,
+      rgba(45, 32, 15, 0.30) 80%,
+      rgba(24, 17, 8, 0.60) 100%
+    ),
+
+    linear-gradient(
+      90deg,
+      rgba(20, 14, 7, 0.45) 0%,
+      transparent 8%,
+      transparent 92%,
+      rgba(20, 14, 7, 0.45) 100%
+    );
+}
+
+
+/* =========================================================
+   ATMOSPHERE
+   ========================================================= */
+
+.historical-material-atmosphere {
+  z-index: 5;
+
+  opacity: 0;
+
+  transition:
+    opacity 1400ms ease;
+}
+
+
+.historical-material[data-atmosphere="dust"]
+  .historical-material-atmosphere {
+
+  opacity: 0.46;
+
+  background:
+
+    radial-gradient(
+      ellipse at 27% 34%,
+      rgba(222, 181, 110, 0.040),
+      transparent 27%
+    ),
+
+    radial-gradient(
+      ellipse at 72% 61%,
+      rgba(193, 146, 83, 0.035),
+      transparent 31%
+    );
+}
+
+
+.historical-material[data-atmosphere="mineral"]
+  .historical-material-atmosphere {
+
+  opacity: 0.34;
+
+  background:
+
+    radial-gradient(
+      ellipse at 30% 25%,
+      rgba(199, 181, 137, 0.035),
+      transparent 30%
+    );
+}
+
+
+.historical-material[data-atmosphere="paper"]
+  .historical-material-atmosphere {
+
+  opacity: 0.20;
+
+  background:
+
+    radial-gradient(
+      ellipse at 45% 30%,
+      rgba(224, 204, 165, 0.030),
+      transparent 45%
+    );
+}
+
+
+.historical-material[data-atmosphere="archive"]
+  .historical-material-atmosphere {
+
+  opacity: 0.16;
+
+  background:
+
+    radial-gradient(
+      ellipse at 50% 30%,
+      rgba(205, 201, 181, 0.025),
+      transparent 55%
+    );
+}
+
+
+/* =========================================================
+   VIBE TINT
+
+   This is the layer that gives each era its own light
+   temperature and mood -- separate from the physical
+   material underneath it. Two eras can share "parchment"
+   as a material but read completely differently in mood
+   (a cold Byzantine archive vs. a warm candlelit scriptorium).
+   ========================================================= */
+
+.historical-material-vibe-tint {
+  z-index: 6;
+
+  opacity: 0;
+
+  mix-blend-mode: soft-light;
+
+  will-change: opacity;
+
+  transition: opacity 1600ms ease;
+}
+
+.historical-material[data-era-vibe="firelight"]
+  .historical-material-vibe-tint {
+
+  opacity: 0.55;
+
+  background:
+
+    radial-gradient(
+      ellipse at 50% 78%,
+      rgba(255, 138, 58, 0.20),
+      transparent 46%
+    ),
+
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(255, 96, 30, 0.16),
+      transparent 60%
+    );
+}
+
+.historical-material[data-era-vibe="desertHeat"]
+  .historical-material-vibe-tint {
+
+  opacity: 0.42;
+
+  background:
+
+    linear-gradient(
+      180deg,
+      rgba(255, 214, 150, 0.10) 0%,
+      transparent 40%
+    ),
+
+    radial-gradient(
+      ellipse at 50% 30%,
+      rgba(255, 196, 120, 0.12),
+      transparent 55%
+    );
+}
+
+.historical-material[data-era-vibe="marbleHall"]
+  .historical-material-vibe-tint {
+
+  opacity: 0.36;
+
+  background:
+
+    linear-gradient(
+      100deg,
+      rgba(220, 226, 232, 0.10) 0%,
+      transparent 30%,
+      transparent 70%,
+      rgba(220, 226, 232, 0.10) 100%
+    );
+}
+
+.historical-material[data-era-vibe="candlelight"]
+  .historical-material-vibe-tint {
+
+  opacity: 0.48;
+
+  background:
+
+    radial-gradient(
+      ellipse at 50% 40%,
+      rgba(255, 196, 110, 0.16),
+      transparent 50%
+    );
+}
+
+.historical-material[data-era-vibe="painterly"]
+  .historical-material-vibe-tint {
+
+  opacity: 0.40;
+
+  background:
+
+    radial-gradient(
+      ellipse at 40% 25%,
+      rgba(255, 219, 160, 0.14),
+      transparent 55%
+    );
+}
+
+.historical-material[data-era-vibe="oldFilm"]
+  .historical-material-vibe-tint {
+
+  opacity: 0.50;
+
+  mix-blend-mode: color;
+
+  background: rgba(196, 176, 130, 0.35);
+}
+
+.historical-material[data-era-vibe="archive"]
+  .historical-material-vibe-tint {
+
+  opacity: 0.18;
+
+  background: rgba(210, 210, 200, 0.10);
+}
+
+
+/* =========================================================
+   VIGNETTE
+   ========================================================= */
+
+.historical-material-vignette {
+  z-index: 8;
+
+  background:
+
+    radial-gradient(
+      ellipse at center,
+      transparent 48%,
+      rgba(0, 0, 0, 0.10) 68%,
+      rgba(0, 0, 0, 0.32) 85%,
+      rgba(0, 0, 0, 0.68) 100%
+    );
+}
+
+
+/* Old-film gets a tighter, harder vignette -- like a lens iris */
+.historical-material[data-era-vibe="oldFilm"]
+  .historical-material-vignette {
+
+  background:
+
+    radial-gradient(
+      ellipse at center,
+      transparent 38%,
+      rgba(0, 0, 0, 0.16) 60%,
+      rgba(0, 0, 0, 0.46) 82%,
+      rgba(0, 0, 0, 0.82) 100%
+    );
+}
+
+
+/* =========================================================
+   MATERIAL TRANSITION
+   ========================================================= */
+
+.historical-material.is-transitioning
+  .historical-material-base {
+
+  filter: blur(2px);
+
+  transform: scale(1.065);
+}
+
+.historical-material.is-transitioning
+  .historical-material-grain {
+
+  opacity: 0.44;
+}
+
+.historical-material.is-transitioning
+  .historical-material-particles {
+
+  opacity: 0;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .historical-material-base,
+  .historical-material-light,
+  .historical-material-grain,
+  .historical-material-fibers,
+  .historical-material-wear,
+  .historical-material-atmosphere,
+  .historical-material-vibe-tint {
+
+    transition: none;
+  }
+
+  .historical-material-particles {
+    display: none;
+  }
+}
+
+</style>
+
+
+<script>
+  import { animate as animeAnimate } from "animejs";
+  import gsap from "gsap";
+  import * as THREE from "three";
+
+  /* =====================================================
+     TYPES
+     ===================================================== */
+
+  type EraVibe =
+    | "firelight"
+    | "desertHeat"
+    | "marbleHall"
+    | "candlelight"
+    | "painterly"
+    | "oldFilm"
+    | "archive";
+
+  const ERA_KEYWORD_VIBES: [RegExp, EraVibe][] = [
+    [/paleo|stone.?age|prehistor|ice.?age|neolithic/i, "firelight"],
+    [/egypt|bronze.?age|mesopotam|sumer|babylon|pharaoh/i, "desertHeat"],
+    [/gree|rome|roman|classical|antiquit|hellenis/i, "marbleHall"],
+    [/medieval|middle.?ages|feudal|byzant|crusad/i, "candlelight"],
+    [/renaissance|baroque/i, "painterly"],
+    [/industrial|victorian|colonial|19th/i, "oldFilm"],
+    [/modern|contemporary|20th|21st/i, "archive"],
+  ];
+
+  const MATERIAL_VIBE_FALLBACK: Record<string, EraVibe> = {
+    stone: "marbleHall",
+    clay: "desertHeat",
+    parchment: "candlelight",
+    scroll: "candlelight",
+    paper: "painterly",
+    archival: "archive",
+  };
+
+  function resolveEraVibe(eraId: string, material: string): EraVibe {
+    for (const [pattern, vibe] of ERA_KEYWORD_VIBES) {
+      if (pattern.test(eraId)) return vibe;
+    }
+    return MATERIAL_VIBE_FALLBACK[material] ?? "archive";
+  }
+
+  /* =====================================================
+     PARTICLE CONFIG PER VIBE
+
+     "drift" selects the per-frame motion behavior used
+     in the render loop below.
+     ===================================================== */
+
+  type DriftMode = "rise" | "horizontal" | "float" | "static";
+
+  interface ParticleConfig {
+    count: number;
+    color: number;
+    size: number;
+    speed: number;
+    opacity: number;
+    blending: THREE.Blending;
+    drift: DriftMode;
+  }
+
+  const PARTICLE_CONFIGS: Record<EraVibe, ParticleConfig> = {
+    firelight: {
+      count: 140,
+      color: 0xffab5c,
+      size: 5,
+      speed: 0.09,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending,
+      drift: "rise",
+    },
+    desertHeat: {
+      count: 90,
+      color: 0xdcb87e,
+      size: 3,
+      speed: 0.035,
+      opacity: 0.4,
+      blending: THREE.NormalBlending,
+      drift: "horizontal",
+    },
+    marbleHall: {
+      count: 70,
+      color: 0xe9e4d4,
+      size: 2.4,
+      speed: 0.012,
+      opacity: 0.32,
+      blending: THREE.NormalBlending,
+      drift: "float",
+    },
+    candlelight: {
+      count: 110,
+      color: 0xf0d79c,
+      size: 2.8,
+      speed: 0.02,
+      opacity: 0.5,
+      blending: THREE.NormalBlending,
+      drift: "float",
+    },
+    painterly: {
+      count: 36,
+      color: 0xf6e8c9,
+      size: 3.2,
+      speed: 0.008,
+      opacity: 0.24,
+      blending: THREE.NormalBlending,
+      drift: "float",
+    },
+    oldFilm: {
+      count: 100,
+      color: 0xd9d3ba,
+      size: 1.8,
+      speed: 0.05,
+      opacity: 0.4,
+      blending: THREE.NormalBlending,
+      drift: "static",
+    },
+    archive: {
+      count: 45,
+      color: 0xcbc7b6,
+      size: 2,
+      speed: 0.01,
+      opacity: 0.2,
+      blending: THREE.NormalBlending,
+      drift: "float",
+    },
+  };
+
+  let cleanup: (() => void) | undefined;
+
+
+  /* =====================================================
+     SETUP
+     ===================================================== */
+
+  async function setupHistoricalMaterial() {
+
+    cleanup?.();
+
+    const root =
+      document.querySelector<HTMLElement>("[data-historical-material]");
+
+    if (!root) {
+      return;
+    }
+
+    const { resolveHistoricalExperience } = await import(
+      "../../lib/experience/resolver"
+    );
+
+    /* =====================================================
+       ELEMENTS
+       ===================================================== */
+
+    const base = root.querySelector<HTMLElement>(".historical-material-base");
+    const light = root.querySelector<HTMLElement>(".historical-material-light");
+    const grain = root.querySelector<HTMLElement>(".historical-material-grain");
+    const fibers = root.querySelector<HTMLElement>(".historical-material-fibers");
+    const wear = root.querySelector<HTMLElement>(".historical-material-wear");
+    const vibeTint = root.querySelector<HTMLElement>(".historical-material-vibe-tint");
+    const canvas = root.querySelector<HTMLCanvasElement>("[data-historical-particles]");
+
+    const reducedMotion =
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const animeInstances: any[] = [];
+    const gsapTimelines: gsap.core.Timeline[] = [];
+
+    /* =====================================================
+       ANIME.JS -- SLOW MATERIAL DRIFT (the surface itself
+       breathing, independent of era)
+       ===================================================== */
+
+    if (!reducedMotion && base) {
+      animeInstances.push(
+        animeAnimate(base, {
+          translateX: ["-0.25%", "0.30%"],
+          translateY: ["0.15%", "-0.20%"],
+          scale: [1.035, 1.055],
+          duration: 24000,
+          ease: "inOutSine",
+          alternate: true,
+          loop: true,
+        }),
+      );
+    }
+
+    if (!reducedMotion && light) {
+      animeInstances.push(
+        animeAnimate(light, {
+          translateX: ["-1%", "1.2%"],
+          translateY: ["-0.6%", "0.8%"],
+          scale: [1.14, 1.19],
+          opacity: [0.34, 0.48],
+          duration: 18000,
+          ease: "inOutSine",
+          alternate: true,
+          loop: true,
+        }),
+      );
+    }
+
+    if (!reducedMotion && grain) {
+      animeInstances.push(
+        animeAnimate(grain, {
+          translateX: ["-0.35%", "0.35%"],
+          translateY: ["0.20%", "-0.30%"],
+          scale: [1.12, 1.125],
+          duration: 14000,
+          ease: "linear",
+          alternate: true,
+          loop: true,
+        }),
+      );
+    }
+
+    if (!reducedMotion && fibers) {
+      animeInstances.push(
+        animeAnimate(fibers, {
+          translateX: ["-0.18%", "0.18%"],
+          translateY: ["0.10%", "-0.12%"],
+          duration: 28000,
+          ease: "inOutSine",
+          alternate: true,
+          loop: true,
+        }),
+      );
+    }
+
+    if (!reducedMotion && wear) {
+      animeInstances.push(
+        animeAnimate(wear, {
+          translateX: ["-0.10%", "0.10%"],
+          translateY: ["0.08%", "-0.08%"],
+          duration: 36000,
+          ease: "inOutSine",
+          alternate: true,
+          loop: true,
+        }),
+      );
+    }
+
+    /* =====================================================
+       GSAP -- ORGANIC FLICKER PER VIBE
+
+       Torchlight and candlelight don't pulse on a clean sine
+       wave -- they gutter irregularly. GSAP's random duration
+       per repeat gives that "alive flame" quality that a CSS
+       keyframe loop can't.
+       ===================================================== */
+
+    function buildFlickerTimeline(target: Element, vibe: EraVibe) {
+      if (reducedMotion) return null;
+
+      if (vibe === "firelight" || vibe === "candlelight") {
+        const tl = gsap.timeline({ repeat: -1 });
+        const baseOpacity = vibe === "firelight" ? 0.55 : 0.48;
+
+        const flicker = () => {
+          tl.to(target, {
+            opacity: baseOpacity + (Math.random() * 0.18 - 0.06),
+            duration: 0.12 + Math.random() * 0.28,
+            ease: "sine.inOut",
+          });
+        };
+
+        for (let i = 0; i < 40; i += 1) flicker();
+        return tl;
+      }
+
+      if (vibe === "oldFilm") {
+        // Occasional reel jitter: a quick vertical hop + brightness pop,
+        // like a damaged film frame skipping.
+        const tl = gsap.timeline({ repeat: -1, repeatDelay: 0 });
+
+        const jitter = () => {
+          const delay = 1.8 + Math.random() * 3.5;
+          tl.to(target, { opacity: 0.5, duration: 0.04, delay })
+            .to(target, { opacity: 1, duration: 0.06 })
+            .to(root!, { y: (Math.random() * 2 - 1), duration: 0.05 })
+            .to(root!, { y: 0, duration: 0.08 });
+        };
+
+        for (let i = 0; i < 30; i += 1) jitter();
+        return tl;
+      }
+
+      // Gentle ambient pulse for the remaining vibes
+      const tl = gsap.timeline({ repeat: -1, yoyo: true });
+      tl.to(target, {
+        opacity: "+=0.06",
+        duration: 6 + Math.random() * 4,
+        ease: "sine.inOut",
+      });
+      return tl;
+    }
+
+    /* =====================================================
+       THREE.JS -- LIVE PARTICLE LAYER
+       (embers / sand / dust / film grain)
+       ===================================================== */
+
+    let renderer: THREE.WebGLRenderer | null = null;
+    let scene: THREE.Scene | null = null;
+    let camera: THREE.OrthographicCamera | null = null;
+    let points: THREE.Points | null = null;
+    let velocities: Float32Array | null = null;
+    let phases: Float32Array | null = null;
+    let rafId = 0;
+    let particlesReady = false;
+
+    function disposePoints() {
+      if (points && scene) {
+        scene.remove(points);
+        points.geometry.dispose();
+        (points.material as THREE.Material).dispose();
+        points = null;
+      }
+    }
+
+    function buildParticles(vibe: EraVibe) {
+      if (!scene) return;
+
+      disposePoints();
+
+      const config = PARTICLE_CONFIGS[vibe];
+      const count = reducedMotion ? 0 : config.count;
+
+      const positions = new Float32Array(count * 3);
+      velocities = new Float32Array(count * 3);
+      phases = new Float32Array(count);
+
+      for (let i = 0; i < count; i += 1) {
+        const ix = i * 3;
+        positions[ix] = (Math.random() * 2 - 1);
+        positions[ix + 1] = (Math.random() * 2 - 1);
+        positions[ix + 2] = 0;
+
+        phases[i] = Math.random() * Math.PI * 2;
+
+        if (config.drift === "rise") {
+          velocities[ix] = (Math.random() * 2 - 1) * 0.05;
+          velocities[ix + 1] = config.speed * (0.6 + Math.random() * 0.8);
+        } else if (config.drift === "horizontal") {
+          velocities[ix] = config.speed * (0.5 + Math.random() * 0.8);
+          velocities[ix + 1] = (Math.random() * 2 - 1) * 0.004;
+        } else if (config.drift === "float") {
+          velocities[ix] = (Math.random() * 2 - 1) * config.speed;
+          velocities[ix + 1] = (Math.random() * 2 - 1) * config.speed;
+        } else {
+          velocities[ix] = 0;
+          velocities[ix + 1] = 0;
+        }
+      }
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3),
+      );
+
+      const material = new THREE.PointsMaterial({
+        color: config.color,
+        size: config.size * 0.008,
+        transparent: true,
+        opacity: config.opacity,
+        blending: config.blending,
+        depthWrite: false,
+        sizeAttenuation: true,
+      });
+
+      points = new THREE.Points(geometry, material);
+      scene.add(points);
+    }
+
+    function animateParticles() {
+      if (points && scene && camera && renderer && velocities && phases) {
+        const positionAttr = points.geometry.getAttribute(
+          "position",
+        ) as THREE.BufferAttribute;
+        const arr = positionAttr.array as Float32Array;
+        const t = performance.now() * 0.001;
+
+        for (let i = 0; i < arr.length / 3; i += 1) {
+          const ix = i * 3;
+
+          arr[ix] += velocities[ix] * 0.02;
+          arr[ix + 1] += velocities[ix + 1] * 0.02;
+
+          // gentle turbulence so "float" and "rise" don't look mechanical
+          arr[ix] += Math.sin(t * 0.6 + phases[i]) * 0.0006;
+
+          // wrap around edges so particles loop seamlessly
+          if (arr[ix] > 1.1) arr[ix] = -1.1;
+          if (arr[ix] < -1.1) arr[ix] = 1.1;
+          if (arr[ix + 1] > 1.1) arr[ix + 1] = -1.1;
+          if (arr[ix + 1] < -1.1) arr[ix + 1] = 1.1;
+        }
+
+        positionAttr.needsUpdate = true;
+        renderer.render(scene, camera);
+      }
+
+      rafId = requestAnimationFrame(animateParticles);
+    }
+
+    function resizeRenderer() {
+      if (!renderer || !camera || !canvas) return;
+      const width = canvas.clientWidth || window.innerWidth;
+      const height = canvas.clientHeight || window.innerHeight;
+      const aspect = width / height;
+
+      renderer.setSize(width, height, false);
+      camera.left = -aspect;
+      camera.right = aspect;
+      camera.top = 1;
+      camera.bottom = -1;
+      camera.updateProjectionMatrix();
+    }
+
+    function initParticles(vibe: EraVibe) {
+      if (!canvas || !root || reducedMotion) return;
+
+      try {
+        renderer = new THREE.WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: false,
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        scene = new THREE.Scene();
+        camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
+        camera.position.z = 1;
+
+        resizeRenderer();
+        buildParticles(vibe);
+        animateParticles();
+
+        particlesReady = true;
+        root.classList.add("is-particles-ready");
+      } catch {
+        // WebGL unavailable -- fail silently, CSS layers still carry the look
+        particlesReady = false;
+      }
+    }
+
+    /* =====================================================
+       INITIAL VIBE
+       ===================================================== */
+
+    const initialVibe = resolveEraVibe(
+      root.dataset.eraId ?? "",
+      root.dataset.material ?? "",
+    );
+
+    root.dataset.eraVibe = initialVibe;
+
+    if (vibeTint) {
+      gsapTimelines.push(
+        ...([buildFlickerTimeline(vibeTint, initialVibe)].filter(
+          Boolean,
+        ) as gsap.core.Timeline[]),
+      );
+    }
+
+    initParticles(initialVibe);
+
+    window.addEventListener("resize", resizeRenderer);
+
+    /* =====================================================
+       EXPERIENCE UPDATE (era / world change)
+       ===================================================== */
+
+    const updateExperience = (
+      worldId: string,
+      eraId: string,
+      contentType: string,
+    ) => {
+
+      const experience = resolveHistoricalExperience(
+        worldId,
+        eraId,
+        contentType,
+      );
+
+      const nextVibe = resolveEraVibe(eraId, experience.material);
+
+      root.classList.add("is-transitioning");
+
+      gsap.delayedCall(reducedMotion ? 0 : 0.7, () => {
+        root.dataset.worldId = worldId;
+        root.dataset.eraId = eraId;
+        root.dataset.contentType = contentType;
+        root.dataset.material = experience.material;
+        root.dataset.texture = experience.texture;
+        root.dataset.headingTreatment = experience.titleMotion;
+        root.dataset.atmosphere = experience.atmosphere;
+        root.dataset.atmosphereIntensity = String(experience.intensity);
+        root.dataset.eraVibe = nextVibe;
+
+        // Restart flicker timeline for the new vibe
+        gsapTimelines.forEach((tl) => tl.kill());
+        gsapTimelines.length = 0;
+        if (vibeTint) {
+          const tl = buildFlickerTimeline(vibeTint, nextVibe);
+          if (tl) gsapTimelines.push(tl);
+        }
+
+        // Rebuild particle system for the new vibe
+        if (particlesReady) buildParticles(nextVibe);
+
+        root.classList.remove("is-transitioning");
+      });
+    };
+
+    const handleTimelineChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        worldId?: string;
+        eraId?: string;
+      }>;
+
+      const worldId = customEvent.detail?.worldId ?? root.dataset.worldId;
+      const eraId = customEvent.detail?.eraId ?? root.dataset.eraId;
+      const contentType = root.dataset.contentType ?? "overview";
+
+      if (!worldId || !eraId) return;
+
+      updateExperience(worldId, eraId, contentType);
+    };
+
+    window.addEventListener("aion:timeline-change", handleTimelineChange);
+
+    /* =====================================================
+       PAUSE WHEN TAB HIDDEN (saves battery/GPU)
+       ===================================================== */
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(rafId);
+        gsapTimelines.forEach((tl) => tl.pause());
+      } else if (particlesReady) {
+        animateParticles();
+        gsapTimelines.forEach((tl) => tl.play());
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    /* =====================================================
+       CLEANUP
+       ===================================================== */
+
+    cleanup = () => {
+      window.removeEventListener("aion:timeline-change", handleTimelineChange);
+      window.removeEventListener("resize", resizeRenderer);
+      document.removeEventListener("visibilitychange", handleVisibility);
+
+      animeInstances.forEach((instance) => {
+        try {
+          instance.pause?.();
+        } catch {
+          /* no-op */
+        }
+      });
+
+      gsapTimelines.forEach((tl) => tl.kill());
+
+      cancelAnimationFrame(rafId);
+      disposePoints();
+      renderer?.dispose();
+      renderer = null;
+      scene = null;
+      camera = null;
+    };
+  }
+
+
+  /* =====================================================
+     INITIALIZE
+     ===================================================== */
+
+  setupHistoricalMaterial();
+
+  document.addEventListener("astro:after-swap", setupHistoricalMaterial);
+</script>

@@ -6,248 +6,3532 @@ import {
 
 import Layout from "../../layouts/Layout.astro";
 
+import HistoricalMaterial
+  from "../../components/history/HistoricalMaterial.astro";
+
+import {
+  resolveExperience,
+} from "../../lib/experience/resolver";
+
+
+/* =====================================================
+   STATIC PATHS
+   ===================================================== */
+
 export async function getStaticPaths() {
-  const entries = await getCollection(
-    "historicalContent"
+
+  const entries =
+    await getCollection(
+      "historicalContent"
+    );
+
+
+  return entries.map(
+    (entry) => ({
+
+      params: {
+        slug: entry.id,
+      },
+
+      props: {
+        entry,
+      },
+
+    })
   );
 
-  return entries.map((entry) => ({
-    params: {
-      slug: entry.id,
-    },
-    props: {
-      entry,
-    },
-  }));
 }
 
-const { entry } = Astro.props;
 
-const { Content } = await render(entry);
+/* =====================================================
+   CONTENT
+   ===================================================== */
 
-const data = entry.data;
+const { entry } =
+  Astro.props;
+
+
+const { Content } =
+  await render(entry);
+
+
+const data =
+  entry.data;
+
+
+/* =====================================================
+   AION EXPERIENCE
+   ===================================================== */
+
+/*
+ * The visual experience is determined by:
+ *
+ * WORLD
+ *   +
+ * ERA
+ *   +
+ * CONTENT TYPE
+ *
+ * Example:
+ *
+ * india:classical-india:person
+ *
+ * or:
+ *
+ * india:modern-india:person
+ *
+ * Adding a new world/era/type only ever means adding
+ * an entry to `combinations.ts` — everything below
+ * (fonts, motion, pointer interaction) reads off the
+ * profile's flat fields (material / typography /
+ * titleMotion / interaction / atmosphere), so nothing
+ * here needs to change.
+ */
+
+const experience =
+  resolveExperience(
+    data.world,
+    data.era,
+    data.type,
+  );
+
 ---
+
 
 <Layout
   title={`${data.title} — AION`}
   description={data.summary}
 >
-  <main class="historical-entry">
 
-    <header class="historical-entry-header">
+<main
+  class="historical-entry"
 
-      <a
-        href="/india"
-        class="historical-back"
+  data-world-id={data.world}
+  data-era-id={data.era}
+  data-content-type={data.type}
+
+  data-material={experience.material}
+  data-texture={experience.texture}
+  data-typography={experience.typography}
+  data-title-motion={experience.titleMotion}
+  data-interaction={experience.interaction}
+  data-atmosphere={experience.atmosphere}
+>
+
+    <!-- =================================================
+         HISTORICAL MATERIAL
+         ================================================= -->
+
+    <HistoricalMaterial
+      worldId={data.world}
+      eraId={data.era}
+      contentType={data.type}
+    />
+
+
+    <!-- =================================================
+         ARTICLE SHELL
+         ================================================= -->
+
+    <div
+      class="historical-entry-shell"
+    >
+
+
+      <!-- =================================================
+           HEADER
+           ================================================= -->
+
+      <header
+        class="historical-entry-header"
+        data-entry-header
       >
-        ← INDIA
-      </a>
 
-      <div class="historical-entry-meta">
 
-        <span class="historical-type">
-          {data.type.toUpperCase()}
-        </span>
+        <!-- BACK -->
 
-        <span class="historical-status">
-          {data.status
-            .replaceAll("-", " ")
-            .toUpperCase()}
-        </span>
+        <a
+          href="/india"
+          class="historical-back"
+          data-entry-element
+        >
 
-      </div>
+          <span
+            class="back-mark"
+          >
+            ←
+          </span>
 
-      <h1>
-        {data.title}
-      </h1>
+          <span>
+            INDIA
+          </span>
 
-      {
-        data.subtitle && (
-          <p class="historical-subtitle">
-            {data.subtitle}
-          </p>
-        )
-      }
+        </a>
 
-      <p class="historical-summary">
-        {data.summary}
-      </p>
 
-      {
-        data.tags &&
-        data.tags.length > 0 && (
-          <div class="historical-tags">
-            {data.tags.map((tag) => (
-              <span>
-                {tag}
-              </span>
-            ))}
+        <!-- META -->
+
+        <div
+          class="historical-entry-meta"
+          data-entry-element
+        >
+
+          <span
+            class="historical-type"
+          >
+            {data.type.toUpperCase()}
+          </span>
+
+
+          <span
+            class="historical-status"
+          >
+            {data.status
+              .replaceAll("-", " ")
+              .toUpperCase()}
+          </span>
+
+        </div>
+
+
+        <!-- =================================================
+             TITLE
+             ================================================= -->
+
+        <div
+          class="historical-title-wrap"
+          data-entry-title-wrap
+        >
+
+
+          <!-- Physical/depth shadow -->
+
+          <div
+            class="historical-title-shadow"
+            aria-hidden="true"
+          >
+            {data.title}
           </div>
-        )
-      }
 
-    </header>
 
-    <article class="historical-entry-body">
-      <Content />
-    </article>
+          <!-- Actual title -->
+
+          <h1
+            data-entry-title
+          >
+            {data.title}
+          </h1>
+
+
+          <!-- Surface highlight -->
+
+          <div
+            class="historical-title-highlight"
+            aria-hidden="true"
+          >
+            {data.title}
+          </div>
+
+
+          <!-- Moving material light -->
+
+          <div
+            class="historical-title-light"
+            aria-hidden="true"
+          ></div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             SUBTITLE
+             ================================================= -->
+
+        {
+          data.subtitle && (
+
+            <p
+              class="historical-subtitle"
+              data-entry-element
+            >
+              {data.subtitle}
+            </p>
+
+          )
+        }
+
+
+        <!-- =================================================
+             SUMMARY
+             ================================================= -->
+
+        <p
+          class="historical-summary"
+          data-entry-element
+        >
+          {data.summary}
+        </p>
+
+
+        <!-- =================================================
+             TAGS
+             ================================================= -->
+
+        {
+          data.tags &&
+          data.tags.length > 0 && (
+
+            <div
+              class="historical-tags"
+              data-entry-tags
+            >
+
+              {
+                data.tags.map(
+                  (tag) => (
+
+                    <span>
+                      {tag}
+                    </span>
+
+                  )
+                )
+              }
+
+            </div>
+
+          )
+        }
+
+
+        <!-- =================================================
+             HEADER RULE
+             ================================================= -->
+
+        <div
+          class="historical-header-rule"
+          aria-hidden="true"
+        >
+
+          <span></span>
+
+        </div>
+
+
+      </header>
+
+
+      <!-- =================================================
+           MARKDOWN CONTENT
+           ================================================= -->
+
+      <article
+        class="historical-entry-body"
+        data-historical-body
+      >
+
+        <Content />
+
+      </article>
+
+
+    </div>
 
   </main>
+
 </Layout>
 
+
 <style>
-  .historical-entry {
-    min-height: 100vh;
-    background:
-      radial-gradient(
-        circle at 50% 0%,
-        rgba(200, 161, 90, 0.08),
-        transparent 40%
-      ),
-      #080a0d;
-    color: #e8e3d8;
-  }
 
-  .historical-entry-header {
-    width: min(1000px, calc(100% - 48px));
-    margin: 0 auto;
-    padding: 48px 0 72px;
-  }
 
-  .historical-back {
-    display: inline-block;
-    margin-bottom: 80px;
+/* =========================================================
+   AION HISTORICAL TYPOGRAPHY
+   ========================================================= */
 
-    color: #c8a15a;
-    text-decoration: none;
+:global(:root) {
 
-    font-size: 12px;
-    letter-spacing: 0.16em;
-    font-weight: 600;
-  }
+  --aion-font-ui:
+    "Inter",
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 
-  .historical-entry-meta {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 24px;
-  }
 
-  .historical-type,
-  .historical-status {
-    padding: 7px 11px;
+  /*
+   * Monumental / inscriptional. Ancient (clay) and
+   * Classical (stone) both read off this — ancient
+   * content leans on it a little more loosely via
+   * the "dust" title motion below.
+   */
 
-    border: 1px solid
-      rgba(200, 161, 90, 0.25);
+  --aion-font-inscription:
+    "Cinzel Decorative",
+    "Cinzel",
+    Georgia,
+    serif;
 
-    border-radius: 999px;
 
-    color: rgba(232, 227, 216, 0.7);
+  /*
+   * Old literary / manuscript character. Used for
+   * medieval parchment and any classical/medieval
+   * scroll (palm-leaf) content.
+   */
 
-    font-size: 10px;
-    letter-spacing: 0.12em;
-  }
+  --aion-font-scripture:
+    "IM FELL English",
+    "IM FELL English SC",
+    Georgia,
+    "Times New Roman",
+    serif;
 
-  .historical-entry-header h1 {
-    margin: 0;
 
-    font-size: clamp(
-      48px,
-      8vw,
-      100px
+  /*
+   * Supporting historical display. Early modern
+   * paper-era content.
+   */
+
+  --aion-font-display:
+    "Cormorant Garamond",
+    Georgia,
+    "Times New Roman",
+    serif;
+
+
+  /*
+   * Typewritten / bureaucratic character. Modern
+   * archival documents (colonial & independence-era
+   * records).
+   */
+
+  --aion-font-archival:
+    "Special Elite",
+    "Courier Prime",
+    "Courier New",
+    monospace;
+
+
+  /*
+   * Long-form reading.
+   */
+
+  --aion-font-reading:
+    "Source Serif 4",
+    Georgia,
+    "Times New Roman",
+    serif;
+
+}
+
+
+/* =========================================================
+   PAGE
+   ========================================================= */
+
+.historical-entry {
+
+  position:
+    relative;
+
+  min-height:
+    100vh;
+
+  overflow-x:
+    hidden;
+
+  isolation:
+    isolate;
+
+  background:
+    transparent;
+
+  color:
+    #e8e3d8;
+
+}
+
+
+/* =========================================================
+   ARTICLE SHELL
+   ========================================================= */
+
+.historical-entry-shell {
+
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  width:
+    100%;
+
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.historical-entry-header {
+
+  width:
+    min(
+      920px,
+      calc(100% - 48px)
     );
 
-    line-height: 0.95;
-    letter-spacing: -0.045em;
+  margin:
+    0 auto;
+
+  padding:
+    110px 0 100px;
+
+}
+
+
+/* =========================================================
+   BACK
+   ========================================================= */
+
+.historical-back {
+
+  display:
+    inline-flex;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  margin-bottom:
+    58px;
+
+  color:
+    rgba(
+      200,
+      161,
+      90,
+      0.72
+    );
+
+  font-family:
+    var(--aion-font-ui);
+
+  font-size:
+    10px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.22em;
+
+  text-decoration:
+    none;
+
+  transition:
+    color 240ms ease;
+
+}
+
+
+.historical-back:hover {
+
+  color:
+    #e8e3d8;
+
+}
+
+
+.back-mark {
+
+  font-size:
+    15px;
+
+  line-height:
+    1;
+
+  transition:
+    transform 300ms ease;
+
+}
+
+
+.historical-back:hover
+  .back-mark {
+
+  transform:
+    translateX(-5px);
+
+}
+
+
+/* =========================================================
+   META
+   ========================================================= */
+
+.historical-entry-meta {
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    14px;
+
+  margin-bottom:
+    30px;
+
+  font-family:
+    var(--aion-font-ui);
+
+}
+
+
+.historical-type,
+.historical-status {
+
+  color:
+    rgba(
+      200,
+      161,
+      90,
+      0.68
+    );
+
+  font-size:
+    9px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.19em;
+
+}
+
+
+.historical-status {
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.38
+    );
+
+}
+
+
+.historical-type::after {
+
+  content:
+    "·";
+
+  margin-left:
+    14px;
+
+  color:
+    rgba(
+      200,
+      161,
+      90,
+      0.30
+    );
+
+}
+
+
+/* =========================================================
+   TITLE WRAPPER
+   ========================================================= */
+
+.historical-title-wrap {
+
+  position:
+    relative;
+
+  width:
+    fit-content;
+
+  max-width:
+    100%;
+
+  overflow:
+    visible;
+
+  transform-origin:
+    center left;
+
+  will-change:
+    transform;
+
+}
+
+
+/* =========================================================
+   MAIN TITLE
+   default font is the inscription face; data-typography
+   below overrides it per era.
+   ========================================================= */
+
+.historical-entry-header h1 {
+
+  position:
+    relative;
+
+  z-index:
+    3;
+
+  max-width:
+    900px;
+
+  margin:
+    0;
+
+  color:
+    #e8e3d8;
+
+  font-family:
+    var(--aion-font-inscription);
+
+  font-size:
+    clamp(
+      4rem,
+      8vw,
+      8rem
+    );
+
+  font-weight:
+    400;
+
+  line-height:
+    0.90;
+
+  letter-spacing:
+    -0.025em;
+
+  text-wrap:
+    balance;
+
+  will-change:
+    transform,
+    opacity,
+    filter,
+    letter-spacing;
+
+}
+
+
+/* =========================================================
+   TITLE SHADOW
+   ========================================================= */
+
+.historical-title-shadow {
+
+  position:
+    absolute;
+
+  z-index:
+    1;
+
+  inset:
+    0;
+
+  color:
+    rgba(
+      0,
+      0,
+      0,
+      0.55
+    );
+
+  font-family:
+    inherit;
+
+  font-size:
+    clamp(
+      4rem,
+      8vw,
+      8rem
+    );
+
+  font-weight:
+    400;
+
+  line-height:
+    0.90;
+
+  letter-spacing:
+    -0.025em;
+
+  transform:
+    translate(
+      0,
+      3px
+    );
+
+  pointer-events:
+    none;
+
+}
+
+
+/* =========================================================
+   TITLE HIGHLIGHT
+   ========================================================= */
+
+.historical-title-highlight {
+
+  position:
+    absolute;
+
+  z-index:
+    4;
+
+  inset:
+    0;
+
+  color:
+    transparent;
+
+  font-family:
+    inherit;
+
+  font-size:
+    clamp(
+      4rem,
+      8vw,
+      8rem
+    );
+
+  font-weight:
+    400;
+
+  line-height:
+    0.90;
+
+  letter-spacing:
+    -0.025em;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(
+        255,
+        255,
+        255,
+        0.16
+      ),
+      transparent 35%
+    );
+
+  background-clip:
+    text;
+
+  -webkit-background-clip:
+    text;
+
+  pointer-events:
+    none;
+
+  opacity:
+    0.45;
+
+}
+
+
+/* =========================================================
+   TITLE LIGHT
+   ========================================================= */
+
+.historical-title-light {
+
+  position:
+    absolute;
+
+  z-index:
+    5;
+
+  top:
+    -20%;
+
+  left:
+    -30%;
+
+  width:
+    35%;
+
+  height:
+    150%;
+
+  opacity:
+    0;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        255,
+        240,
+        195,
+        0.18
+      ),
+      transparent
+    );
+
+  transform:
+    skewX(-18deg)
+    translateX(-180%);
+
+  pointer-events:
+    none;
+
+}
+
+
+/* =========================================================================
+   TYPOGRAPHY (data-typography)
+   Controls the FONT for the title (and the two ghost
+   layers, via `inherit`, above). Kept separate from
+   title MOTION below, so a new era can mix and match
+   e.g. "manuscript font + dust motion" freely.
+   ========================================================================= */
+
+.historical-entry[data-typography="inscription"]
+  .historical-entry-header h1 {
+
+  font-family:
+    var(--aion-font-inscription);
+
+  font-weight:
+    400;
+
+  letter-spacing:
+    -0.025em;
+
+}
+
+
+.historical-entry[data-typography="manuscript"]
+  .historical-entry-header h1 {
+
+  font-family:
+    var(--aion-font-scripture);
+
+  font-weight:
+    400;
+
+  letter-spacing:
+    -0.01em;
+
+}
+
+
+.historical-entry[data-typography="historical-display"]
+  .historical-entry-header h1 {
+
+  font-family:
+    var(--aion-font-display);
+
+  font-weight:
+    500;
+
+  letter-spacing:
+    -0.035em;
+
+}
+
+
+.historical-entry[data-typography="archival"]
+  .historical-entry-header h1 {
+
+  font-family:
+    var(--aion-font-archival);
+
+  font-weight:
+    400;
+
+  font-size:
+    clamp(
+      2.6rem,
+      6vw,
+      5rem
+    );
+
+  letter-spacing:
+    0.01em;
+
+  text-transform:
+    uppercase;
+
+}
+
+
+.historical-entry[data-typography="plain"]
+  .historical-entry-header h1 {
+
+  font-family:
+    var(--aion-font-ui);
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    -0.02em;
+
+}
+
+
+/* =========================================================================
+   TITLE MOTION (data-title-motion)
+   Purely the carved/inked/printed *feel* (shadow,
+   ghost-layer opacity). The entrance animation itself
+   lives in the script below, driven by the same
+   attribute via TITLE_MOTION_CONFIG.
+   ========================================================================= */
+
+/* ENGRAVE — carved stone, hard highlight/shadow */
+
+.historical-entry[data-title-motion="engrave"]
+  .historical-entry-header h1 {
+
+  text-shadow:
+
+    0 1px 0
+      rgba(
+        255,
+        255,
+        255,
+        0.08
+      ),
+
+    0 -1px 0
+      rgba(
+        0,
+        0,
+        0,
+        0.55
+      ),
+
+    0 5px 18px
+      rgba(
+        0,
+        0,
+        0,
+        0.55
+      );
+
+}
+
+
+/* INK — softer bleed, no hard carve */
+
+.historical-entry[data-title-motion="ink"]
+  .historical-entry-header h1 {
+
+  text-shadow:
+    0 2px 8px
+      rgba(
+        20,
+        12,
+        4,
+        0.45
+      );
+
+}
+
+.historical-entry[data-title-motion="ink"]
+  .historical-title-highlight {
+
+  opacity:
+    0.30;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(
+        255,
+        244,
+        214,
+        0.10
+      ),
+      transparent 40%
+    );
+
+}
+
+
+/* DUST — hazy, low-contrast, as if still half-buried */
+
+.historical-entry[data-title-motion="dust"]
+  .historical-entry-header h1 {
+
+  text-shadow:
+    0 3px 20px
+      rgba(
+        0,
+        0,
+        0,
+        0.40
+      );
+
+}
+
+.historical-entry[data-title-motion="dust"]
+  .historical-title-highlight {
+
+  opacity:
+    0.22;
+
+}
+
+
+/* PRINT — crisp inked print onto archival paper */
+
+.historical-entry[data-title-motion="print"]
+  .historical-entry-header h1 {
+
+  text-shadow:
+    0 2px 12px
+      rgba(
+        0,
+        0,
+        0,
+        0.38
+      );
+
+}
+
+.historical-entry[data-title-motion="print"]
+  .historical-title-highlight {
+
+  opacity:
+    0.18;
+
+}
+
+
+/* PLAIN — no flourish, fallback */
+
+.historical-entry[data-title-motion="plain"]
+  .historical-entry-header h1 {
+
+  text-shadow:
+    none;
+
+}
+
+.historical-entry[data-title-motion="plain"]
+  .historical-title-shadow,
+.historical-entry[data-title-motion="plain"]
+  .historical-title-highlight,
+.historical-entry[data-title-motion="plain"]
+  .historical-title-light {
+
+  display:
+    none;
+
+}
+
+
+/* =========================================================
+   SUBTITLE
+   ========================================================= */
+
+.historical-subtitle {
+
+  max-width:
+    680px;
+
+  margin:
+    32px 0 0;
+
+  color:
+    rgba(
+      200,
+      161,
+      90,
+      0.82
+    );
+
+  font-family:
+    var(--aion-font-scripture);
+
+  font-size:
+    clamp(
+      1.2rem,
+      2vw,
+      1.55rem
+    );
+
+  font-weight:
+    400;
+
+  font-style:
+    italic;
+
+  line-height:
+    1.55;
+
+}
+
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.historical-summary {
+
+  max-width:
+    680px;
+
+  margin:
+    34px 0 0;
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.62
+    );
+
+  font-family:
+    var(--aion-font-reading);
+
+  font-size:
+    17px;
+
+  line-height:
+    1.9;
+
+}
+
+
+/* =========================================================
+   TAGS
+   ========================================================= */
+
+.historical-tags {
+
+  display:
+    flex;
+
+  flex-wrap:
+    wrap;
+
+  gap:
+    8px;
+
+  margin-top:
+    32px;
+
+  font-family:
+    var(--aion-font-ui);
+
+}
+
+
+.historical-tags span {
+
+  padding:
+    5px 9px;
+
+  border:
+    1px solid
+    rgba(
+      232,
+      227,
+      216,
+      0.08
+    );
+
+  background:
+    rgba(
+      21,
+      24,
+      29,
+      0.16
+    );
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.38
+    );
+
+  font-size:
+    9px;
+
+  letter-spacing:
+    0.08em;
+
+  text-transform:
+    uppercase;
+
+}
+
+
+/* =========================================================
+   HEADER RULE
+   ========================================================= */
+
+.historical-header-rule {
+
+  width:
+    100%;
+
+  height:
+    1px;
+
+  margin-top:
+    88px;
+
+  overflow:
+    hidden;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        200,
+        161,
+        90,
+        0.10
+      ),
+      transparent
+    );
+
+}
+
+
+.historical-header-rule span {
+
+  display:
+    block;
+
+  width:
+    30%;
+
+  height:
+    1px;
+
+  background:
+    rgba(
+      200,
+      161,
+      90,
+      0.42
+    );
+
+  transform:
+    scaleX(0);
+
+  transform-origin:
+    left center;
+
+}
+
+
+/* =========================================================
+   MARKDOWN BODY
+   ========================================================= */
+
+.historical-entry-body {
+
+  width:
+    min(
+      760px,
+      calc(100% - 48px)
+    );
+
+  margin:
+    0 auto;
+
+  padding:
+    10px 0 220px;
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.78
+    );
+
+  font-family:
+    var(--aion-font-reading);
+
+  font-size:
+    19px;
+
+  line-height:
+    2;
+
+}
+
+
+/* =========================================================================
+   MARKDOWN BODY TYPOGRAPHY OVERRIDES
+   The body copy stays on the reading serif for
+   legibility across every era, but headings inside
+   the markdown pick up the same typography choice as
+   the page title so the whole article feels of one era.
+   ========================================================================= */
+
+.historical-entry[data-typography="manuscript"]
+  .historical-entry-body
+  :global(h2),
+.historical-entry[data-typography="manuscript"]
+  .historical-entry-body
+  :global(h3) {
+
+  font-family:
+    var(--aion-font-scripture);
+
+}
+
+
+.historical-entry[data-typography="historical-display"]
+  .historical-entry-body
+  :global(h2),
+.historical-entry[data-typography="historical-display"]
+  .historical-entry-body
+  :global(h3) {
+
+  font-family:
+    var(--aion-font-display);
+
+}
+
+
+.historical-entry[data-typography="archival"]
+  .historical-entry-body
+  :global(h2) {
+
+  font-family:
+    var(--aion-font-archival);
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.02em;
+
+}
+
+
+.historical-entry[data-typography="plain"]
+  .historical-entry-body
+  :global(h2),
+.historical-entry[data-typography="plain"]
+  .historical-entry-body
+  :global(h3) {
+
+  font-family:
+    var(--aion-font-ui);
+
+}
+
+
+/* =========================================================
+   HISTORICAL SECTION
+   ========================================================= */
+
+.historical-entry-body
+  :global(.historical-section) {
+
+  position:
+    relative;
+
+  margin:
+    150px 0;
+
+  will-change:
+    transform,
+    opacity;
+
+}
+
+
+/* =========================================================
+   SECTION HEADING
+   ========================================================= */
+
+.historical-entry-body
+  :global(h2) {
+
+  position:
+    relative;
+
+  margin:
+    0 0 36px;
+
+  color:
+    #e8e3d8;
+
+  font-family:
+    var(--aion-font-scripture);
+
+  font-size:
+    clamp(
+      2.25rem,
+      4vw,
+      3.5rem
+    );
+
+  font-weight:
+    400;
+
+  line-height:
+    1.08;
+
+  letter-spacing:
+    -0.015em;
+
+  scroll-margin-top:
+    120px;
+
+  will-change:
+    transform,
+    opacity,
+    filter,
+    clip-path;
+
+}
+
+
+/* =========================================================
+   SECTION DIVIDER
+   ========================================================= */
+
+.historical-entry-body
+  :global(h2::after) {
+
+  content:
+    "";
+
+  display:
+    block;
+
+  width:
+    70px;
+
+  height:
+    1px;
+
+  margin-top:
+    22px;
+
+  background:
+    rgba(
+      200,
+      161,
+      90,
+      0.42
+    );
+
+  transform:
+    scaleX(1);
+
+  transform-origin:
+    left center;
+
+}
+
+
+/* =========================================================
+   H3
+   ========================================================= */
+
+.historical-entry-body
+  :global(h3) {
+
+  margin:
+    72px 0 22px;
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.88
+    );
+
+  font-family:
+    var(--aion-font-scripture);
+
+  font-size:
+    1.7rem;
+
+  font-weight:
+    400;
+
+  line-height:
+    1.3;
+
+}
+
+
+/* =========================================================
+   PARAGRAPHS
+   ========================================================= */
+
+.historical-entry-body
+  :global(p) {
+
+  max-width:
+    760px;
+
+  margin:
+    0 0 30px;
+
+}
+
+
+/* =========================================================
+   FIRST LETTER
+   ========================================================= */
+
+.historical-entry-body
+  :global(
+    .historical-section > p:first-of-type::first-letter
+  ) {
+
+  float:
+    left;
+
+  margin:
+    8px 10px 0 0;
+
+  color:
+    #c8a15a;
+
+  font-family:
+    var(--aion-font-inscription);
+
+  font-size:
+    3.4em;
+
+  line-height:
+    0.78;
+
+}
+
+
+/* =========================================================
+   STRONG
+   ========================================================= */
+
+.historical-entry-body
+  :global(strong) {
+
+  color:
+    #e8e3d8;
+
+  font-weight:
+    600;
+
+}
+
+
+/* =========================================================
+   EMPHASIS
+   ========================================================= */
+
+.historical-entry-body
+  :global(em) {
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.86
+    );
+
+  font-family:
+    var(--aion-font-scripture);
+
+}
+
+
+/* =========================================================
+   LISTS
+   ========================================================= */
+
+.historical-entry-body
+  :global(ul),
+.historical-entry-body
+  :global(ol) {
+
+  max-width:
+    760px;
+
+  margin:
+    34px 0;
+
+  padding-left:
+    30px;
+
+}
+
+
+.historical-entry-body
+  :global(li) {
+
+  margin:
+    11px 0;
+
+}
+
+
+/* =========================================================
+   LINKS
+   ========================================================= */
+
+.historical-entry-body
+  :global(a) {
+
+  color:
+    #c8a15a;
+
+  text-decoration:
+    underline;
+
+  text-decoration-color:
+    rgba(
+      200,
+      161,
+      90,
+      0.35
+    );
+
+  text-underline-offset:
+    4px;
+
+  transition:
+    color 220ms ease;
+
+}
+
+
+.historical-entry-body
+  :global(a:hover) {
+
+  color:
+    #e8e3d8;
+
+}
+
+
+/* =========================================================
+   BLOCKQUOTE
+   ========================================================= */
+
+.historical-entry-body
+  :global(blockquote) {
+
+  max-width:
+    720px;
+
+  margin:
+    64px 0;
+
+  padding:
+    12px 0 12px 30px;
+
+  border-left:
+    1px solid
+    rgba(
+      200,
+      161,
+      90,
+      0.42
+    );
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.58
+    );
+
+  font-family:
+    var(--aion-font-scripture);
+
+  font-size:
+    1.08em;
+
+  font-style:
+    italic;
+
+  line-height:
+    1.8;
+
+}
+
+
+/* =========================================================
+   IMAGES
+   ========================================================= */
+
+.historical-entry-body
+  :global(img) {
+
+  display:
+    block;
+
+  width:
+    100%;
+
+  height:
+    auto;
+
+  margin:
+    72px 0;
+
+  border:
+    1px solid
+    rgba(
+      200,
+      161,
+      90,
+      0.12
+    );
+
+  opacity:
+    0.92;
+
+}
+
+
+/* =========================================================
+   FIGURES
+   ========================================================= */
+
+.historical-entry-body
+  :global(figure) {
+
+  margin:
+    72px 0;
+
+}
+
+
+.historical-entry-body
+  :global(figcaption) {
+
+  margin-top:
+    14px;
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.40
+    );
+
+  font-family:
+    var(--aion-font-ui);
+
+  font-size:
+    10px;
+
+  line-height:
+    1.6;
+
+  letter-spacing:
+    0.05em;
+
+}
+
+
+/* =========================================================
+   HORIZONTAL RULE
+   ========================================================= */
+
+.historical-entry-body
+  :global(hr) {
+
+  width:
+    100%;
+
+  height:
+    1px;
+
+  margin:
+    100px 0;
+
+  border:
+    0;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(
+        200,
+        161,
+        90,
+        0.20
+      ),
+      transparent
+    );
+
+}
+
+
+/* =========================================================
+   CODE
+   ========================================================= */
+
+.historical-entry-body
+  :global(code) {
+
+  padding:
+    2px 6px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.035
+    );
+
+  color:
+    rgba(
+      232,
+      227,
+      216,
+      0.78
+    );
+
+  font-family:
+    monospace;
+
+  font-size:
+    0.88em;
+
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .historical-entry-header {
+
+    width:
+      calc(100% - 40px);
+
+    padding:
+      80px 0;
+
   }
+
+
+  .historical-back {
+
+    margin-bottom:
+      48px;
+
+  }
+
+
+  .historical-entry-header h1,
+  .historical-title-shadow,
+  .historical-title-highlight {
+
+    font-size:
+      clamp(
+        3.1rem,
+        15vw,
+        5.5rem
+      );
+
+    line-height:
+      0.90;
+
+  }
+
+
+  .historical-entry[data-typography="archival"]
+    .historical-entry-header h1 {
+
+    font-size:
+      clamp(
+        2.2rem,
+        11vw,
+        3.6rem
+      );
+
+  }
+
 
   .historical-subtitle {
-    margin: 22px 0 0;
 
-    color: #c8a15a;
+    font-size:
+      1.15rem;
 
-    font-size: 22px;
   }
+
 
   .historical-summary {
-    max-width: 720px;
-    margin-top: 30px;
 
-    color: rgba(232, 227, 216, 0.65);
+    font-size:
+      16px;
 
-    font-size: 18px;
-    line-height: 1.7;
   }
 
-  .historical-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 28px;
-  }
-
-  .historical-tags span {
-    padding: 8px 12px;
-
-    background: #15181d;
-
-    border: 1px solid
-      rgba(232, 227, 216, 0.08);
-
-    border-radius: 999px;
-
-    color: rgba(232, 227, 216, 0.65);
-
-    font-size: 12px;
-  }
 
   .historical-entry-body {
-    width: min(800px, calc(100% - 48px));
-    margin: 0 auto;
-    padding-bottom: 120px;
 
-    color: rgba(232, 227, 216, 0.82);
+    width:
+      calc(100% - 40px);
 
-    font-size: 18px;
-    line-height: 1.85;
+    font-size:
+      17px;
+
+    line-height:
+      1.85;
+
+    padding-bottom:
+      140px;
+
   }
 
-  .historical-entry-body :global(h2) {
-    margin-top: 72px;
 
-    color: #e8e3d8;
+  .historical-entry-body
+    :global(.historical-section) {
 
-    font-size: 32px;
+    margin:
+      110px 0;
+
   }
 
-  .historical-entry-body :global(h3) {
-    margin-top: 48px;
 
-    color: #e8e3d8;
+  .historical-entry-body
+    :global(h2) {
+
+    font-size:
+      clamp(
+        2rem,
+        9vw,
+        2.8rem
+      );
+
   }
 
-  .historical-entry-body :global(p) {
-    margin: 20px 0;
+
+  .historical-entry-body
+    :global(
+      .historical-section > p:first-of-type::first-letter
+    ) {
+
+    font-size:
+      3em;
+
   }
 
-  .historical-entry-body :global(ul) {
-    padding-left: 24px;
+
+  .historical-header-rule {
+
+    margin-top:
+      64px;
+
   }
 
-  .historical-entry-body :global(li) {
-    margin: 8px 0;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (
+  prefers-reduced-motion: reduce
+) {
+
+  .historical-entry-body
+    :global(.historical-section) {
+
+    opacity:
+      1 !important;
+
+    transform:
+      none !important;
+
   }
 
-  @media (max-width: 700px) {
-    .historical-entry-header {
-      padding-top: 32px;
-    }
 
-    .historical-back {
-      margin-bottom: 50px;
-    }
+  .historical-entry-header h1 {
 
-    .historical-entry-header h1 {
-      font-size: 54px;
-    }
+    filter:
+      none !important;
+
   }
+
+}
+
 </style>
+
+
+<script>
+
+  import gsap from "gsap";
+
+  import {
+    ScrollTrigger,
+  } from "gsap/ScrollTrigger";
+
+  import {
+    animate as animeAnimate,
+  } from "animejs";
+
+
+  gsap.registerPlugin(
+    ScrollTrigger
+  );
+
+
+  /* =====================================================
+     TITLE MOTION CONFIG
+     =====================================================
+
+     One entry per HistoricalTitleMotion value. Adding
+     a new motion to the type only ever means adding a
+     row here — the intro timeline below just reads
+     off whichever config matches `data-title-motion`.
+     ===================================================== */
+
+  const TITLE_MOTION_CONFIG: Record<
+    string,
+    {
+      initialY: number;
+      initialBlur: number;
+      initialLetterSpacing: string;
+      finalLetterSpacing: string;
+      duration: number;
+      ease: string;
+      shadowInitialY: number;
+      shadowFinalOpacity: number;
+      highlightInitialY: number;
+      highlightFinalOpacity: number;
+      showLight: boolean;
+    }
+  > = {
+
+    engrave: {
+      initialY: 55,
+      initialBlur: 4,
+      initialLetterSpacing: "0.035em",
+      finalLetterSpacing: "-0.025em",
+      duration: 1.55,
+      ease: "power3.out",
+      shadowInitialY: 61,
+      shadowFinalOpacity: 0.52,
+      highlightInitialY: 50,
+      highlightFinalOpacity: 0.45,
+      showLight: false,
+    },
+
+    ink: {
+      initialY: 26,
+      initialBlur: 3,
+      initialLetterSpacing: "0.01em",
+      finalLetterSpacing: "-0.01em",
+      duration: 1.3,
+      ease: "power2.out",
+      shadowInitialY: 30,
+      shadowFinalOpacity: 0.34,
+      highlightInitialY: 22,
+      highlightFinalOpacity: 0.30,
+      showLight: false,
+    },
+
+    dust: {
+      initialY: 16,
+      initialBlur: 6,
+      initialLetterSpacing: "0.02em",
+      finalLetterSpacing: "0em",
+      duration: 1.8,
+      ease: "power1.out",
+      shadowInitialY: 18,
+      shadowFinalOpacity: 0.28,
+      highlightInitialY: 14,
+      highlightFinalOpacity: 0.22,
+      showLight: false,
+    },
+
+    print: {
+      initialY: 18,
+      initialBlur: 1.5,
+      initialLetterSpacing: "0.015em",
+      finalLetterSpacing: "-0.035em",
+      duration: 1.0,
+      ease: "power2.out",
+      shadowInitialY: 21,
+      shadowFinalOpacity: 0.30,
+      highlightInitialY: 16,
+      highlightFinalOpacity: 0.18,
+      showLight: true,
+    },
+
+    plain: {
+      initialY: 10,
+      initialBlur: 0,
+      initialLetterSpacing: "0em",
+      finalLetterSpacing: "0em",
+      duration: 0.6,
+      ease: "power1.out",
+      shadowInitialY: 0,
+      shadowFinalOpacity: 0,
+      highlightInitialY: 0,
+      highlightFinalOpacity: 0,
+      showLight: false,
+    },
+
+  };
+
+
+  /* =====================================================
+     INTERACTION CONFIG
+     =====================================================
+
+     One entry per HistoricalInteraction value. Controls
+     both the pointer-tilt "relief" loop and the anime.js
+     hover micro-interaction.
+     ===================================================== */
+
+  const INTERACTION_CONFIG: Record<
+    string,
+    {
+      tiltX: number;
+      tiltY: number;
+      hoverScale: number;
+      highlightHoverOpacity: number;
+    }
+  > = {
+
+    relief: {
+      tiltX: 4,
+      tiltY: 2.5,
+      hoverScale: 1.008,
+      highlightHoverOpacity: 0.62,
+    },
+
+    ink: {
+      tiltX: 1.6,
+      tiltY: 1,
+      hoverScale: 1.004,
+      highlightHoverOpacity: 0.42,
+    },
+
+    paper: {
+      tiltX: 0.6,
+      tiltY: 0.4,
+      hoverScale: 1.002,
+      highlightHoverOpacity: 0.28,
+    },
+
+    none: {
+      tiltX: 0,
+      tiltY: 0,
+      hoverScale: 1,
+      highlightHoverOpacity: 0,
+    },
+
+  };
+
+
+  /* =====================================================
+     AION HISTORICAL ARTICLE ENGINE
+     ===================================================== */
+
+  const entry =
+    document.querySelector<HTMLElement>(
+      ".historical-entry"
+    );
+
+
+  const header =
+    document.querySelector<HTMLElement>(
+      "[data-entry-header]"
+    );
+
+
+  const body =
+    document.querySelector<HTMLElement>(
+      "[data-historical-body]"
+    );
+
+
+  /*
+   * Stop safely if this isn't
+   * an historical article page.
+   */
+
+  if (
+    entry &&
+    header &&
+    body
+  ) {
+
+
+    /* ===================================================
+       MOTION PREFERENCE
+       =================================================== */
+
+    const reducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)"
+      ).matches;
+
+
+    /* ===================================================
+       EXPERIENCE
+       =================================================== */
+
+    const titleMotion =
+      entry.dataset.titleMotion ??
+      "plain";
+
+
+    const motion =
+      TITLE_MOTION_CONFIG[titleMotion] ??
+      TITLE_MOTION_CONFIG.plain;
+
+
+    const interaction =
+      entry.dataset.interaction ??
+      "none";
+
+
+    const pointer =
+      INTERACTION_CONFIG[interaction] ??
+      INTERACTION_CONFIG.none;
+
+
+    /* ===================================================
+       ELEMENTS
+       =================================================== */
+
+    const title =
+      header.querySelector<HTMLElement>(
+        "[data-entry-title]"
+      );
+
+
+    const titleShadow =
+      header.querySelector<HTMLElement>(
+        ".historical-title-shadow"
+      );
+
+
+    const titleHighlight =
+      header.querySelector<HTMLElement>(
+        ".historical-title-highlight"
+      );
+
+
+    const titleLight =
+      header.querySelector<HTMLElement>(
+        ".historical-title-light"
+      );
+
+
+    const titleWrap =
+      header.querySelector<HTMLElement>(
+        "[data-entry-title-wrap]"
+      );
+
+
+    const headerElements =
+      Array.from(
+        header.querySelectorAll<HTMLElement>(
+          "[data-entry-element]"
+        )
+      );
+
+
+    const headerRule =
+      header.querySelector<HTMLElement>(
+        ".historical-header-rule span"
+      );
+
+
+    /* ===================================================
+       OPENING ANIMATION
+       =================================================== */
+
+    if (!reducedMotion) {
+
+
+      /* -------------------------------------------------
+         Supporting elements
+         ------------------------------------------------- */
+
+      gsap.set(
+        headerElements,
+        {
+          opacity: 0,
+          y: 18,
+        }
+      );
+
+
+      /* -------------------------------------------------
+         Main title — initial state comes straight
+         from TITLE_MOTION_CONFIG.
+         ------------------------------------------------- */
+
+      if (title) {
+
+        gsap.set(
+          title,
+          {
+            opacity: 0,
+            y: motion.initialY,
+            filter:
+              `blur(${motion.initialBlur}px)`,
+            letterSpacing:
+              motion.initialLetterSpacing,
+          }
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Shadow
+         ------------------------------------------------- */
+
+      if (titleShadow) {
+
+        gsap.set(
+          titleShadow,
+          {
+            opacity: 0,
+            y: motion.shadowInitialY,
+          }
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Highlight
+         ------------------------------------------------- */
+
+      if (titleHighlight) {
+
+        gsap.set(
+          titleHighlight,
+          {
+            opacity: 0,
+            y: motion.highlightInitialY,
+          }
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Title light
+         ------------------------------------------------- */
+
+      if (titleLight) {
+
+        gsap.set(
+          titleLight,
+          {
+            opacity: 0,
+          }
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Header divider
+         ------------------------------------------------- */
+
+      if (headerRule) {
+
+        gsap.set(
+          headerRule,
+          {
+            scaleX: 0,
+            transformOrigin:
+              "left center",
+          }
+        );
+
+      }
+
+
+      /* =================================================
+         INTRO TIMELINE
+         ================================================= */
+
+      const intro =
+        gsap.timeline({
+
+          defaults: {
+            ease:
+              "power3.out",
+          },
+
+        });
+
+
+      /* -------------------------------------------------
+         Metadata
+         ------------------------------------------------- */
+
+      intro.to(
+        headerElements,
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.75,
+          stagger: 0.07,
+        }
+      );
+
+
+      /* -------------------------------------------------
+         Shadow
+         ------------------------------------------------- */
+
+      if (titleShadow) {
+
+        intro.to(
+          titleShadow,
+          {
+            opacity:
+              motion.shadowFinalOpacity,
+
+            y: 0,
+
+            duration:
+              motion.duration,
+
+            ease:
+              "power3.out",
+
+          },
+          "-=0.35"
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Main title
+         ------------------------------------------------- */
+
+      if (title) {
+
+        intro.to(
+          title,
+          {
+
+            opacity: 1,
+
+            y: 0,
+
+            filter:
+              "blur(0px)",
+
+            letterSpacing:
+              motion.finalLetterSpacing,
+
+            duration:
+              motion.duration,
+
+            ease:
+              motion.ease,
+
+          },
+
+          `-=${Math.min(motion.duration * 0.7, 1.05)}`
+
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Highlight
+         ------------------------------------------------- */
+
+      if (titleHighlight) {
+
+        intro.to(
+          titleHighlight,
+          {
+
+            opacity:
+              motion.highlightFinalOpacity,
+
+            y: 0,
+
+            duration:
+              motion.duration * 0.75,
+
+            ease:
+              "power2.out",
+
+          },
+
+          "-=0.9"
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Archival print light sweep
+         (only for motions that opt in via `showLight`)
+         ------------------------------------------------- */
+
+      if (
+        titleLight &&
+        motion.showLight
+      ) {
+
+        intro.to(
+          titleLight,
+          {
+            opacity: 0.7,
+            duration: 0.25,
+          },
+          "-=0.25"
+        );
+
+
+        intro.to(
+          titleLight,
+          {
+            xPercent: 600,
+            opacity: 0,
+            duration: 1.1,
+            ease:
+              "power2.inOut",
+          }
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Supporting information
+         ------------------------------------------------- */
+
+      const supporting =
+        header.querySelectorAll(
+          ".historical-subtitle, .historical-summary, .historical-tags"
+        );
+
+
+      if (
+        supporting.length > 0
+      ) {
+
+        intro.to(
+          supporting,
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.9,
+            stagger: 0.08,
+          },
+          "-=0.65"
+        );
+
+      }
+
+
+      /* -------------------------------------------------
+         Divider
+         ------------------------------------------------- */
+
+      if (headerRule) {
+
+        intro.to(
+          headerRule,
+          {
+            scaleX: 1,
+            duration: 1.15,
+            ease:
+              "power2.out",
+          },
+          "-=0.55"
+        );
+
+      }
+
+    }
+
+
+    /* ===================================================
+       TITLE POINTER INTERACTION
+       Driven by `data-interaction` — "none" disables
+       this loop entirely (also respects reduced motion).
+       =================================================== */
+
+    if (
+      titleWrap &&
+      title &&
+      !reducedMotion &&
+      (pointer.tiltX > 0 || pointer.tiltY > 0)
+    ) {
+
+
+      let targetX = 0;
+
+      let targetY = 0;
+
+      let currentX = 0;
+
+      let currentY = 0;
+
+
+      titleWrap.addEventListener(
+        "pointermove",
+        (event) => {
+
+          const rect =
+            titleWrap.getBoundingClientRect();
+
+
+          const x =
+            (
+              event.clientX -
+              rect.left
+            ) /
+            rect.width;
+
+
+          const y =
+            (
+              event.clientY -
+              rect.top
+            ) /
+            rect.height;
+
+
+          targetX =
+            (x - 0.5) * pointer.tiltX;
+
+
+          targetY =
+            (y - 0.5) * pointer.tiltY;
+
+        }
+      );
+
+
+      titleWrap.addEventListener(
+        "pointerleave",
+        () => {
+
+          targetX = 0;
+
+          targetY = 0;
+
+        }
+      );
+
+
+      const updateRelief =
+        () => {
+
+          currentX +=
+            (
+              targetX -
+              currentX
+            ) * 0.08;
+
+
+          currentY +=
+            (
+              targetY -
+              currentY
+            ) * 0.08;
+
+
+          gsap.set(
+            title,
+            {
+              x:
+                currentX,
+
+              y:
+                currentY,
+            }
+          );
+
+
+          if (
+            titleHighlight
+          ) {
+
+            gsap.set(
+              titleHighlight,
+              {
+                x:
+                  currentX *
+                  0.35,
+
+                y:
+                  currentY *
+                  0.35,
+              }
+            );
+
+          }
+
+
+          if (
+            titleShadow
+          ) {
+
+            gsap.set(
+              titleShadow,
+              {
+                x:
+                  currentX *
+                  -0.18,
+
+                y:
+                  currentY *
+                  -0.18,
+              }
+            );
+
+          }
+
+
+          requestAnimationFrame(
+            updateRelief
+          );
+
+        };
+
+
+      updateRelief();
+
+    }
+
+
+    /* ===================================================
+       ANIME.JS MICRO INTERACTION
+       Skipped entirely for interaction "none".
+       =================================================== */
+
+    if (
+      titleWrap &&
+      !reducedMotion &&
+      interaction !== "none"
+    ) {
+
+
+      titleWrap.addEventListener(
+        "pointerenter",
+        () => {
+
+          try {
+
+            animeAnimate(
+              titleWrap,
+              {
+                scale:
+                  pointer.hoverScale,
+
+                duration:
+                  500,
+
+                ease:
+                  "out(3)",
+              }
+            );
+
+
+            if (
+              titleHighlight
+            ) {
+
+              animeAnimate(
+                titleHighlight,
+                {
+
+                  opacity:
+                    pointer.highlightHoverOpacity,
+
+                  duration:
+                    500,
+
+                  ease:
+                    "out(3)",
+
+                }
+              );
+
+            }
+
+          }
+          catch (
+            error
+          ) {
+
+            /*
+             * Anime.js is only a
+             * micro-interaction layer.
+             *
+             * Never allow it to
+             * break GSAP.
+             */
+
+            console.warn(
+              "AION: Anime.js interaction failed.",
+              error
+            );
+
+          }
+
+        }
+      );
+
+
+      titleWrap.addEventListener(
+        "pointerleave",
+        () => {
+
+          try {
+
+            animeAnimate(
+              titleWrap,
+              {
+                scale: 1,
+                duration:
+                  700,
+                ease:
+                  "out(3)",
+              }
+            );
+
+
+            if (
+              titleHighlight
+            ) {
+
+              animeAnimate(
+                titleHighlight,
+                {
+
+                  opacity:
+                    motion.highlightFinalOpacity,
+
+                  duration:
+                    700,
+
+                  ease:
+                    "out(3)",
+
+                }
+              );
+
+            }
+
+          }
+          catch (
+            error
+          ) {
+
+            console.warn(
+              "AION: Anime.js interaction failed.",
+              error
+            );
+
+          }
+
+        }
+      );
+
+    }
+
+
+    /* ===================================================
+       MARKDOWN HEADINGS
+       =================================================== */
+
+    const headings =
+      Array.from(
+        body.querySelectorAll<HTMLElement>(
+          ":scope > h2"
+        )
+      );
+
+
+    /* ===================================================
+       SECTION CREATION
+       =================================================== */
+
+    if (
+      headings.length > 0
+    ) {
+
+
+      headings.forEach(
+        (heading) => {
+
+          const section =
+            document.createElement(
+              "section"
+            );
+
+
+          section.className =
+            "historical-section";
+
+
+          section.dataset.sectionState =
+            "future";
+
+
+          body.insertBefore(
+            section,
+            heading
+          );
+
+
+          section.appendChild(
+            heading
+          );
+
+
+          let next =
+            section.nextElementSibling;
+
+
+          while (
+            next &&
+            next.tagName !== "H2"
+          ) {
+
+            const current =
+              next;
+
+
+            next =
+              next.nextElementSibling;
+
+
+            section.appendChild(
+              current
+            );
+
+          }
+
+        }
+      );
+
+
+      /* =================================================
+         SECTIONS
+         ================================================= */
+
+      const sections =
+        Array.from(
+          body.querySelectorAll<HTMLElement>(
+            ".historical-section"
+          )
+        );
+
+
+      /* =================================================
+         INITIAL SECTION STATE
+         ================================================= */
+
+      sections.forEach(
+        (section) => {
+
+          const heading =
+            section.querySelector<HTMLElement>(
+              "h2"
+            );
+
+
+          const content =
+            Array.from(
+              section.children
+            ).filter(
+              (element) =>
+                element !== heading
+            ) as HTMLElement[];
+
+
+          if (
+            reducedMotion
+          ) {
+
+            gsap.set(
+              section,
+              {
+                opacity: 1,
+                y: 0,
+              }
+            );
+
+
+            if (
+              heading
+            ) {
+
+              gsap.set(
+                heading,
+                {
+                  opacity: 1,
+                  y: 0,
+                  filter:
+                    "none",
+                  clipPath:
+                    "inset(0 0% 0 0)",
+                }
+              );
+
+            }
+
+
+            gsap.set(
+              content,
+              {
+                opacity: 1,
+                y: 0,
+              }
+            );
+
+
+            return;
+
+          }
+
+
+          /*
+           * Everything starts slightly
+           * below and faded.
+           */
+
+          gsap.set(
+            section,
+            {
+              opacity: 0.42,
+              y: 38,
+            }
+          );
+
+
+          if (
+            heading
+          ) {
+
+            gsap.set(
+              heading,
+              {
+                opacity: 0.32,
+                y: 24,
+                filter:
+                  "blur(1.5px)",
+                clipPath:
+                  "inset(0 100% 0 0)",
+              }
+            );
+
+          }
+
+
+          gsap.set(
+            content,
+            {
+              opacity: 0.22,
+              y: 16,
+            }
+          );
+
+        }
+      );
+
+
+      /* =================================================
+         SCROLL EXPERIENCE
+         ================================================= */
+
+      if (
+        !reducedMotion
+      ) {
+
+
+        sections.forEach(
+          (section) => {
+
+            const heading =
+              section.querySelector<HTMLElement>(
+                "h2"
+              );
+
+
+            const content =
+              Array.from(
+                section.children
+              ).filter(
+                (element) =>
+                  element !== heading
+              ) as HTMLElement[];
+
+
+            /*
+             * One timeline controls the
+             * ENTIRE life of the section.
+             *
+             * This avoids multiple
+             * ScrollTriggers fighting
+             * over the same properties.
+             */
+
+            const timeline =
+              gsap.timeline({
+
+                scrollTrigger: {
+
+                  trigger:
+                    section,
+
+                  start:
+                    "top 86%",
+
+                  end:
+                    "bottom 18%",
+
+                  scrub:
+                    1,
+
+                  invalidateOnRefresh:
+                    true,
+
+                },
+
+              });
+
+
+            /* ---------------------------------------------
+               FUTURE → PRESENT
+               --------------------------------------------- */
+
+            timeline.to(
+              section,
+              {
+
+                opacity: 1,
+
+                y: 0,
+
+                duration:
+                  0.28,
+
+                ease:
+                  "none",
+
+              }
+            );
+
+
+            if (
+              heading
+            ) {
+
+              timeline.to(
+                heading,
+                {
+
+                  opacity: 1,
+
+                  y: 0,
+
+                  filter:
+                    "blur(0px)",
+
+                  clipPath:
+                    "inset(0 0% 0 0)",
+
+                  duration:
+                    0.28,
+
+                  ease:
+                    "none",
+
+                },
+
+                "<"
+
+              );
+
+            }
+
+
+            timeline.to(
+              content,
+              {
+
+                opacity: 1,
+
+                y: 0,
+
+                duration:
+                  0.28,
+
+                ease:
+                  "none",
+
+              },
+
+              "<0.04"
+
+            );
+
+
+            /* ---------------------------------------------
+               PRESENT
+               --------------------------------------------- */
+
+            timeline.to(
+              section,
+              {
+
+                opacity: 1,
+
+                y: 0,
+
+                duration:
+                  0.34,
+
+                ease:
+                  "none",
+
+              }
+            );
+
+
+            /* ---------------------------------------------
+               PRESENT → PAST
+               --------------------------------------------- */
+
+            timeline.to(
+              section,
+              {
+
+                opacity:
+                  0.56,
+
+                y:
+                  -32,
+
+                duration:
+                  0.38,
+
+                ease:
+                  "none",
+
+              }
+            );
+
+
+            if (
+              heading
+            ) {
+
+              timeline.to(
+                heading,
+                {
+
+                  opacity:
+                    0.58,
+
+                  y:
+                    -24,
+
+                  filter:
+                    "blur(0.5px)",
+
+                  duration:
+                    0.38,
+
+                  ease:
+                    "none",
+
+                },
+
+                "<"
+
+              );
+
+            }
+
+
+            timeline.to(
+              content,
+              {
+
+                opacity:
+                  0.52,
+
+                y:
+                  -14,
+
+                duration:
+                  0.38,
+
+                ease:
+                  "none",
+
+              },
+
+              "<"
+
+            );
+
+
+            /*
+             * Section state is used only
+             * as semantic information.
+             */
+
+            ScrollTrigger.create({
+
+              trigger:
+                section,
+
+              start:
+                "top 60%",
+
+              end:
+                "bottom 40%",
+
+              onEnter:
+                () => {
+
+                  section.dataset.sectionState =
+                    "current";
+
+                },
+
+              onEnterBack:
+                () => {
+
+                  section.dataset.sectionState =
+                    "current";
+
+                },
+
+              onLeave:
+                () => {
+
+                  section.dataset.sectionState =
+                    "past";
+
+                },
+
+              onLeaveBack:
+                () => {
+
+                  section.dataset.sectionState =
+                    "future";
+
+                },
+
+            });
+
+          }
+        );
+
+      }
+
+
+      /* =================================================
+         REFRESH
+         ================================================= */
+
+      requestAnimationFrame(
+        () => {
+
+          ScrollTrigger.refresh();
+
+        }
+      );
+
+
+      window.addEventListener(
+        "load",
+        () => {
+
+          ScrollTrigger.refresh();
+
+        },
+        {
+          once: true,
+        }
+      );
+
+
+      /* =================================================
+         ASTRO VIEW TRANSITIONS
+         ================================================= */
+
+      document.addEventListener(
+        "astro:before-swap",
+        () => {
+
+          ScrollTrigger
+            .getAll()
+            .forEach(
+              (trigger) => {
+
+                trigger.kill();
+
+              }
+            );
+
+        },
+        {
+          once: true,
+        }
+      );
+
+    }
+
+  }
+
+</script>

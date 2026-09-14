@@ -1,332 +1,776 @@
 ---
-import { getContentByType } from "../../lib/content";
+import type { CollectionEntry } from "astro:content";
 
 interface Props {
-  worldId: string;
-  eraId: string;
+  people: CollectionEntry<"historicalContent">[];
 }
 
-const { worldId, eraId } = Astro.props;
-
-const people = await getContentByType(
-  worldId,
-  eraId,
-  "person"
-);
+const { people } = Astro.props;
 ---
 
-<section class="people-section">
+<section
+  class="people-section"
+  data-carousel-section
+>
+  <!-- ==================================================
+       PEOPLE HEADER
+       ================================================== -->
 
-  <div class="people-header">
+  <div class="section-header">
     <div>
-      <span class="people-eyebrow">
+      <span class="section-kicker">
         PEOPLE
       </span>
 
-      <h2>
-        Figures of the Era
-      </h2>
+      <h3>
+        People of the era
+      </h3>
     </div>
 
-    <div class="people-count">
-      {people.length} figures
+    <div class="carousel-controls">
+      <button
+        type="button"
+        class="carousel-button"
+        data-carousel-prev
+        aria-label="Previous person"
+      >
+        ←
+      </button>
+
+      <button
+        type="button"
+        class="carousel-button"
+        data-carousel-next
+        aria-label="Next person"
+      >
+        →
+      </button>
     </div>
   </div>
 
-  <div class="people-carousel">
+  <!-- ==================================================
+       CAROUSEL
+       ================================================== -->
 
-    {
-      people.map((person) => (
-        <article class="person-card">
-
-          <div class="person-card-content">
-
-            <span class="person-type">
-              PERSON
-            </span>
-
-            <h3>
-              {person.data.title}
-            </h3>
-
-            {
-              person.data.subtitle && (
-                <p class="person-subtitle">
-                  {person.data.subtitle}
-                </p>
-              )
-            }
-
-            <p class="person-summary">
-              {person.data.summary}
-            </p>
-
-            <div class="person-meta">
-
-              <span>
-                {person.data.status}
-              </span>
-
-              {
-                person.data.startYear !== undefined &&
-                person.data.endYear !== undefined && (
-                  <span>
-                    {person.data.startYear} —
-                    {person.data.endYear}
-                  </span>
-                )
-              }
-
-            </div>
-
-            <a
-              href={`/india/${person.data.id}`}
-              class="person-link"
+  <div
+    class="people-carousel"
+    data-people-carousel
+  >
+    <div
+      class="people-stage"
+      data-people-stage
+    >
+      {
+        people.map(
+          (person, index) => (
+            <article
+              class="person-card"
+              data-person-card
+              data-index={index}
             >
-              EXPLORE →
-            </a>
+              <!-- ==========================================
+                   PERSON VISUAL
+                   ========================================== -->
 
-          </div>
+              <div class="person-card-visual">
+                {
+                  person.data.image ? (
+                    <img
+                      src={person.data.image}
+                      alt={
+                        person.data.imageAlt ??
+                        person.data.title
+                      }
+                      class="person-card-image"
+                      loading="lazy"
+                      draggable="false"
+                    />
+                  ) : (
+                    <div class="person-card-image-placeholder">
+                      <span>AION</span>
+                    </div>
+                  )
+                }
 
-        </article>
-      ))
-    }
+                <div class="person-card-image-overlay"></div>
 
+                <div class="person-card-glow"></div>
+
+                <div class="person-card-era">
+                  {person.data.era
+                    .replaceAll("-", " ")
+                    .toUpperCase()}
+                </div>
+
+                <div class="person-card-center">
+                  <span class="person-card-type">
+                    PERSON
+                  </span>
+
+                  <h4>
+                    {person.data.title}
+                  </h4>
+
+                  {
+                    person.data.subtitle && (
+                      <p>
+                        {person.data.subtitle}
+                      </p>
+                    )
+                  }
+                </div>
+
+                <div class="person-card-line"></div>
+              </div>
+
+              <!-- ==========================================
+                   PERSON INFORMATION
+                   ========================================== -->
+
+              <div class="person-card-body">
+                <p class="person-card-category">
+                  {person.data.category ??
+                    "Historical Figure"}
+                </p>
+
+                <p class="person-description">
+                  {person.data.summary}
+                </p>
+
+                <!--
+                  Keep the metadata complete in MDX,
+                  but only show a small selection
+                  in the carousel.
+                -->
+                {
+                  person.data.tags &&
+                  person.data.tags.length > 0 && (
+                    <div class="content-tags">
+                      {
+                        person.data.tags
+                          .slice(0, 5)
+                          .map((tag) => (
+                            <span class="content-tag">
+                              {tag}
+                            </span>
+                          ))
+                      }
+                    </div>
+                  )
+                }
+
+                <div class="person-card-footer">
+                  <span class="content-status">
+                    {person.data.status
+                      .replaceAll(
+                        "-",
+                        " "
+                      )
+                      .toUpperCase()}
+                  </span>
+
+                  <a
+                    href={`/india/${person.id}`}
+                    class="learn-more"
+                  >
+                    <span>
+                      Explore person
+                    </span>
+
+                    <span class="learn-arrow">
+                      →
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </article>
+          )
+        )
+      }
+    </div>
   </div>
 
+  <!-- ==================================================
+       PROGRESS
+       ================================================== -->
+
+  <div class="carousel-progress-row">
+    <span
+      class="carousel-index"
+      data-carousel-index
+    >
+      01
+    </span>
+
+    <div class="carousel-progress">
+      <div
+        class="carousel-progress-track"
+        data-carousel-progress
+      ></div>
+    </div>
+
+    <span class="carousel-total">
+      {String(people.length).padStart(2, "0")}
+    </span>
+  </div>
 </section>
 
-<style>
+<script>
+  import { animate } from "animejs";
 
-  .people-section {
-    width: min(
-      1200px,
-      calc(100% - 3rem)
-    );
-    margin: 5rem auto;
-  }
+  class PeopleCarousel {
+    private section: HTMLElement;
 
-  .people-header {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    margin-bottom: 1.5rem;
-  }
+    private cards: HTMLElement[];
 
-  .people-eyebrow {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #c8a15a;
-    font-size: 0.65rem;
-    letter-spacing: 0.22em;
-  }
+    private stage: HTMLElement;
 
-  .people-header h2 {
-    margin: 0;
-    color: #e8e3d8;
-    font-size: clamp(
-      1.5rem,
-      3vw,
-      2.25rem
-    );
-    font-weight: 400;
-  }
+    private previous: HTMLButtonElement;
 
-  .people-count {
-    color:
-      rgba(
-        232,
-        227,
-        216,
-        0.45
-      );
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
+    private next: HTMLButtonElement;
 
-  .people-carousel {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns:
-      minmax(
-        280px,
-        360px
+    private progress: HTMLElement;
+
+    private currentIndex: HTMLElement;
+
+    private activeIndex = 0;
+
+    private startX = 0;
+
+    private currentDelta = 0;
+
+    private dragging = false;
+
+    constructor(section: HTMLElement) {
+      this.section = section;
+
+      this.cards = Array.from(
+        section.querySelectorAll<HTMLElement>(
+          "[data-person-card]"
+        )
       );
 
-    gap: 1rem;
+      this.stage =
+        section.querySelector<HTMLElement>(
+          "[data-people-stage]"
+        )!;
 
-    overflow-x: auto;
+      this.previous =
+        section.querySelector<HTMLButtonElement>(
+          "[data-carousel-prev]"
+        )!;
 
-    padding-bottom: 1rem;
+      this.next =
+        section.querySelector<HTMLButtonElement>(
+          "[data-carousel-next]"
+        )!;
 
-    scroll-snap-type: x mandatory;
+      this.progress =
+        section.querySelector<HTMLElement>(
+          "[data-carousel-progress]"
+        )!;
 
-    scrollbar-width: thin;
-  }
+      this.currentIndex =
+        section.querySelector<HTMLElement>(
+          "[data-carousel-index]"
+        )!;
 
-  .person-card {
-    min-height: 300px;
+      if (
+        !this.cards.length ||
+        !this.stage ||
+        !this.previous ||
+        !this.next ||
+        !this.progress ||
+        !this.currentIndex
+      ) {
+        return;
+      }
 
-    scroll-snap-align: start;
+      /* ----------------------------------------------
+         BUTTONS
+         ---------------------------------------------- */
 
-    background:
-      rgba(
-        15,
-        17,
-        21,
-        0.72
+      this.previous.addEventListener(
+        "click",
+        () => {
+          this.goTo(
+            this.activeIndex - 1
+          );
+        }
       );
 
-    border:
-      1px solid
-      rgba(
-        200,
-        161,
-        90,
-        0.16
+      this.next.addEventListener(
+        "click",
+        () => {
+          this.goTo(
+            this.activeIndex + 1
+          );
+        }
       );
 
-    backdrop-filter: blur(10px);
+      /* ----------------------------------------------
+         POINTER / DRAG
+         ---------------------------------------------- */
 
-    transition:
-      transform 220ms ease,
-      border-color 220ms ease;
-  }
-
-  .person-card:hover {
-    transform:
-      translateY(-4px);
-
-    border-color:
-      rgba(
-        200,
-        161,
-        90,
-        0.4
-      );
-  }
-
-  .person-card-content {
-    display: flex;
-    flex-direction: column;
-
-    height: 100%;
-
-    padding: 1.5rem;
-    box-sizing: border-box;
-  }
-
-  .person-type {
-    color:
-      rgba(
-        200,
-        161,
-        90,
-        0.7
+      this.stage.addEventListener(
+        "pointerdown",
+        this.handlePointerDown
       );
 
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
-  }
-
-  .person-card h3 {
-    margin:
-      1.25rem 0
-      0.35rem;
-
-    color: #e8e3d8;
-
-    font-size: 1.5rem;
-    font-weight: 400;
-  }
-
-  .person-subtitle {
-    margin: 0;
-
-    color:
-      rgba(
-        232,
-        227,
-        216,
-        0.55
+      this.stage.addEventListener(
+        "pointermove",
+        this.handlePointerMove
       );
 
-    font-size: 0.78rem;
-  }
-
-  .person-summary {
-    margin:
-      1.25rem 0;
-
-    color:
-      rgba(
-        232,
-        227,
-        216,
-        0.72
+      this.stage.addEventListener(
+        "pointerup",
+        this.handlePointerUp
       );
 
-    font-size: 0.85rem;
-    line-height: 1.7;
-  }
-
-  .person-meta {
-    display: flex;
-    gap: 1rem;
-
-    margin-top: auto;
-
-    padding-top: 1rem;
-
-    border-top:
-      1px solid
-      rgba(
-        232,
-        227,
-        216,
-        0.08
+      this.stage.addEventListener(
+        "pointercancel",
+        this.handlePointerUp
       );
 
-    color:
-      rgba(
-        232,
-        227,
-        216,
-        0.4
+      /* ----------------------------------------------
+         KEYBOARD
+         ---------------------------------------------- */
+
+      window.addEventListener(
+        "keydown",
+        this.handleKeyboard
       );
 
-    font-size: 0.62rem;
-  }
+      this.stage.style.cursor = "grab";
 
-  .person-link {
-    display: inline-block;
+      /*
+       * Expose refresh method to the parent
+       * IndiaContentController.
+       */
+      (
+        section as HTMLElement & {
+          __aionPeopleCarousel?: {
+            refresh: () => void;
+          };
+        }
+      ).__aionPeopleCarousel = {
+        refresh: () => this.refresh(),
+      };
 
-    margin-top: 1rem;
-
-    color: #c8a15a;
-
-    font-size: 0.65rem;
-    letter-spacing: 0.16em;
-    text-decoration: none;
-  }
-
-  @media (max-width: 700px) {
-
-    .people-section {
-      width:
-        calc(100% - 2rem);
-      margin: 3rem auto;
+      this.update(false);
     }
 
-    .people-carousel {
-      grid-auto-columns:
-        minmax(
-          260px,
-          82vw
+    /* ==================================================
+       PUBLIC REFRESH
+       ================================================== */
+
+    public refresh() {
+      if (!this.cards.length) {
+        return;
+      }
+
+      this.update(false);
+    }
+
+    /* ==================================================
+       POSITION
+       ================================================== */
+
+    private getOffset(
+      index: number
+    ): number {
+      const total =
+        this.cards.length;
+
+      let offset =
+        index - this.activeIndex;
+
+      if (offset > total / 2) {
+        offset -= total;
+      }
+
+      if (offset < -total / 2) {
+        offset += total;
+      }
+
+      return offset;
+    }
+
+    private getSpacing(): number {
+      const width =
+        this.stage.clientWidth;
+
+      /*
+       * If the carousel was hidden during
+       * initialization, width can be 0.
+       *
+       * Returning a sensible minimum prevents
+       * the cards from collapsing into the same
+       * position.
+       */
+      if (width <= 0) {
+        return 360;
+      }
+
+      return Math.min(
+        width * 0.34,
+        430
+      );
+    }
+
+    private update(
+      animateCards = true
+    ) {
+      this.cards.forEach(
+        (card, index) => {
+          const offset =
+            this.getOffset(index);
+
+          this.applyCardPosition(
+            card,
+            offset,
+            0,
+            animateCards
+          );
+        }
+      );
+
+      this.updateControls();
+    }
+
+    private applyCardPosition(
+      card: HTMLElement,
+      offset: number,
+      dragDelta: number,
+      shouldAnimate: boolean
+    ) {
+      const spacing =
+        this.getSpacing();
+
+      const abs =
+        Math.abs(offset);
+
+      const x =
+        offset * spacing +
+        dragDelta * 0.45;
+
+      const z =
+        -abs * 120;
+
+      const rotateY =
+        offset === 0
+          ? dragDelta * -0.02
+          : offset > 0
+            ? -18 -
+              Math.min(
+                abs * 5,
+                22
+              )
+            : 18 +
+              Math.min(
+                abs * 5,
+                22
+              );
+
+      const scale =
+        offset === 0
+          ? 1
+          : Math.max(
+              0.72,
+              0.94 -
+                abs * 0.1
+            );
+
+      const opacity =
+        offset === 0
+          ? 1
+          : Math.max(
+              0.28,
+              0.82 -
+                abs * 0.2
+            );
+
+      animate(card, {
+        translateX: x,
+        translateY: "-50%",
+        translateZ: z,
+        rotateY,
+        scale,
+        opacity,
+        duration:
+          shouldAnimate ? 700 : 0,
+        ease: "out(4)",
+      });
+
+      card.style.zIndex =
+        String(
+          100 -
+            Math.round(
+              abs * 10
+            )
         );
+
+      card.style.pointerEvents =
+        offset === 0
+          ? "auto"
+          : "none";
+
+      card.setAttribute(
+        "aria-hidden",
+        offset === 0
+          ? "false"
+          : "true"
+      );
     }
 
+    /* ==================================================
+       CONTROLS
+       ================================================== */
+
+    private updateControls() {
+      const total =
+        this.cards.length;
+
+      this.previous.disabled =
+        total <= 1;
+
+      this.next.disabled =
+        total <= 1;
+
+      const progress =
+        total <= 1
+          ? 100
+          : (
+              (this.activeIndex + 1) /
+              total
+            ) * 100;
+
+      this.progress.style.width =
+        `${progress}%`;
+
+      this.currentIndex.textContent =
+        String(
+          this.activeIndex + 1
+        ).padStart(2, "0");
+    }
+
+    /* ==================================================
+       NAVIGATION
+       ================================================== */
+
+    private goTo(index: number) {
+      if (
+        this.cards.length <= 1
+      ) {
+        return;
+      }
+
+      this.activeIndex =
+        (
+          index +
+          this.cards.length
+        ) %
+        this.cards.length;
+
+      this.currentDelta = 0;
+
+      this.update(true);
+    }
+
+    /* ==================================================
+       POINTER DOWN
+       ================================================== */
+
+    private handlePointerDown = (
+      event: PointerEvent
+    ) => {
+      if (
+        event.target instanceof
+          HTMLElement &&
+        event.target.closest(
+          "a, button"
+        )
+      ) {
+        return;
+      }
+
+      this.dragging = true;
+
+      this.startX =
+        event.clientX;
+
+      this.currentDelta = 0;
+
+      this.stage.setPointerCapture(
+        event.pointerId
+      );
+
+      this.stage.style.cursor =
+        "grabbing";
+    };
+
+    /* ==================================================
+       POINTER MOVE
+       ================================================== */
+
+    private handlePointerMove = (
+      event: PointerEvent
+    ) => {
+      if (!this.dragging) {
+        return;
+      }
+
+      this.currentDelta =
+        event.clientX -
+        this.startX;
+
+      const delta =
+        this.currentDelta;
+
+      this.cards.forEach(
+        (card, index) => {
+          const offset =
+            this.getOffset(index);
+
+          this.applyCardPosition(
+            card,
+            offset,
+            delta,
+            false
+          );
+        }
+      );
+    };
+
+    /* ==================================================
+       POINTER UP
+       ================================================== */
+
+    private handlePointerUp = (
+      event: PointerEvent
+    ) => {
+      if (!this.dragging) {
+        return;
+      }
+
+      this.dragging = false;
+
+      if (
+        this.stage.hasPointerCapture(
+          event.pointerId
+        )
+      ) {
+        this.stage.releasePointerCapture(
+          event.pointerId
+        );
+      }
+
+      this.stage.style.cursor =
+        "grab";
+
+      const delta =
+        this.currentDelta;
+
+      this.currentDelta = 0;
+
+      if (
+        Math.abs(delta) > 70
+      ) {
+        if (delta < 0) {
+          this.goTo(
+            this.activeIndex + 1
+          );
+        } else {
+          this.goTo(
+            this.activeIndex - 1
+          );
+        }
+
+        return;
+      }
+
+      this.update(true);
+    };
+
+    /* ==================================================
+       KEYBOARD
+       ================================================== */
+
+    private handleKeyboard = (
+      event: KeyboardEvent
+    ) => {
+      if (
+        event.key !== "ArrowLeft" &&
+        event.key !== "ArrowRight"
+      ) {
+        return;
+      }
+
+      const target =
+        event.target as
+          | HTMLElement
+          | null;
+
+      if (
+        target?.matches(
+          "input, textarea, select"
+        )
+      ) {
+        return;
+      }
+
+      /*
+       * Only react when this carousel
+       * is actually visible.
+       */
+      const rect =
+        this.section.getBoundingClientRect();
+
+      const visible =
+        rect.bottom > 0 &&
+        rect.top <
+          window.innerHeight &&
+        rect.width > 0 &&
+        rect.height > 0;
+
+      if (!visible) {
+        return;
+      }
+
+      event.preventDefault();
+
+      if (
+        event.key ===
+        "ArrowLeft"
+      ) {
+        this.goTo(
+          this.activeIndex - 1
+        );
+      }
+
+      if (
+        event.key ===
+        "ArrowRight"
+      ) {
+        this.goTo(
+          this.activeIndex + 1
+        );
+      }
+    };
   }
 
-</style>
+  /* ==========================================================
+     INITIALIZE
+     ========================================================== */
+
+  const sections =
+    document.querySelectorAll<HTMLElement>(
+      "[data-carousel-section]"
+    );
+
+  sections.forEach(
+    (section) => {
+      new PeopleCarousel(section);
+    }
+  );
+</script>

@@ -46,52 +46,109 @@ export class IndiaAtmosphere {
   private currentState: AtmosphereState =
     "ancient-india";
 
+  private destroyed = false;
+
   constructor(root: HTMLElement) {
     this.root = root;
 
     /*
-     * --------------------------------------------------
+     * ==================================================
+     * ROOT LAYER
+     * ==================================================
+     *
+     * IndiaAtmosphere is an overlay only.
+     *
+     * It must NEVER paint the page background.
+     *
+     * HistoricalMaterial owns the actual material:
+     * parchment / stone / paper / archival.
+     */
+
+    this.root.style.position = "fixed";
+    this.root.style.inset = "0";
+    this.root.style.pointerEvents = "none";
+    this.root.style.background = "transparent";
+
+    /*
+     * Keep atmosphere above HistoricalMaterial
+     * but below the actual historical content.
+     */
+
+    this.root.style.zIndex = "1";
+
+    /*
+     * ==================================================
      * ATMOSPHERE STATES
-     * --------------------------------------------------
+     * ==================================================
      */
 
     const stateElements =
       root.querySelectorAll<HTMLElement>(
-        "[data-atmosphere-state]"
+        "[data-atmosphere-state]",
       );
 
     stateElements.forEach((element) => {
       const state =
         element.dataset.atmosphereState;
 
-      if (this.isAtmosphereState(state)) {
-        this.states.set(state, element);
+      if (!this.isAtmosphereState(state)) {
+        return;
       }
+
+      /*
+       * Atmosphere states are overlays.
+       * They must never create an opaque page background.
+       */
+
+      element.style.pointerEvents = "none";
+
+      this.states.set(
+        state,
+        element,
+      );
     });
 
     /*
-     * --------------------------------------------------
+     * ==================================================
      * THREE.JS CONTAINER
-     * --------------------------------------------------
+     * ==================================================
      */
 
     const threeContainer =
       root.querySelector<HTMLElement>(
-        "[data-india-atmosphere-three]"
+        "[data-india-atmosphere-three]",
       );
 
     if (!threeContainer) {
       throw new Error(
-        "AION: India atmosphere Three.js container not found."
+        "AION: India atmosphere Three.js container not found.",
       );
     }
 
-    this.threeContainer = threeContainer;
+    this.threeContainer =
+      threeContainer;
 
     /*
-     * --------------------------------------------------
-     * THREE.JS SETUP
-     * --------------------------------------------------
+     * The Three.js layer is transparent and
+     * positioned inside the atmosphere overlay.
+     */
+
+    this.threeContainer.style.position =
+      "absolute";
+
+    this.threeContainer.style.inset =
+      "0";
+
+    this.threeContainer.style.pointerEvents =
+      "none";
+
+    this.threeContainer.style.background =
+      "transparent";
+
+    /*
+     * ==================================================
+     * SIZE
+     * ==================================================
      */
 
     this.width =
@@ -102,7 +159,14 @@ export class IndiaAtmosphere {
       threeContainer.clientHeight ||
       window.innerHeight;
 
-    this.scene = new THREE.Scene();
+    /*
+     * ==================================================
+     * THREE.JS SCENE
+     * ==================================================
+     */
+
+    this.scene =
+      new THREE.Scene();
 
     this.camera =
       new THREE.OrthographicCamera(
@@ -111,83 +175,119 @@ export class IndiaAtmosphere {
         this.height / 2,
         -this.height / 2,
         0.1,
-        100
+        100,
       );
 
     this.camera.position.z = 10;
+
+    /*
+     * ==================================================
+     * RENDERER
+     * ==================================================
+     */
 
     this.renderer =
       new THREE.WebGLRenderer({
         alpha: true,
         antialias: true,
-        powerPreference: "high-performance",
+        powerPreference:
+          "high-performance",
       });
 
     this.renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio, 2)
+      Math.min(
+        window.devicePixelRatio,
+        2,
+      ),
     );
 
     this.renderer.setSize(
       this.width,
-      this.height
-    );
-
-    this.renderer.setClearColor(
-      0x000000,
-      0
-    );
-
-    threeContainer.appendChild(
-      this.renderer.domElement
+      this.height,
     );
 
     /*
-     * --------------------------------------------------
+     * Absolutely transparent.
+     *
+     * This is critical.
+     */
+
+    this.renderer.setClearColor(
+      0x000000,
+      0,
+    );
+
+    this.renderer.domElement.style.position =
+      "absolute";
+
+    this.renderer.domElement.style.inset =
+      "0";
+
+    this.renderer.domElement.style.width =
+      "100%";
+
+    this.renderer.domElement.style.height =
+      "100%";
+
+    this.renderer.domElement.style.pointerEvents =
+      "none";
+
+    this.renderer.domElement.style.background =
+      "transparent";
+
+    this.threeContainer.appendChild(
+      this.renderer.domElement,
+    );
+
+    /*
+     * ==================================================
      * PARTICLES
-     * --------------------------------------------------
+     * ==================================================
      */
 
     this.particles =
       this.createParticles();
 
-    this.scene.add(this.particles);
+    this.scene.add(
+      this.particles,
+    );
 
     /*
-     * --------------------------------------------------
+     * ==================================================
      * INITIAL SIZE
-     * --------------------------------------------------
+     * ==================================================
      */
 
     this.resize();
 
     window.addEventListener(
       "resize",
-      this.resize
+      this.resize,
     );
 
     /*
-     * --------------------------------------------------
+     * ==================================================
      * INITIAL ATMOSPHERE
-     * --------------------------------------------------
+     * ==================================================
      */
 
     this.initializeState();
 
     /*
-     * --------------------------------------------------
-     * TIMELINE EVENT
-     * --------------------------------------------------
+     * ==================================================
+     * TIMELINE
+     * ==================================================
      */
 
     document.addEventListener(
       "aion:timeline-change",
-      this.handleTimelineChange
+      this.handleTimelineChange,
     );
 
     /*
-     * --------------------------------------------------
-     * START RENDER LOOP
-     * --------------------------------------------------
+     * ==================================================
+     * RENDER LOOP
+     * ==================================================
      */
 
     this.animate();
@@ -200,7 +300,7 @@ export class IndiaAtmosphere {
    */
 
   private isAtmosphereState(
-    value: string | undefined
+    value: string | undefined,
   ): value is AtmosphereState {
     return (
       value === "ancient-india" ||
@@ -220,13 +320,13 @@ export class IndiaAtmosphere {
   private initializeState(): void {
     const timelineRoot =
       document.querySelector<HTMLElement>(
-        "[data-historical-timeline]"
+        "[data-historical-timeline]",
       );
 
     if (!timelineRoot) {
       this.setState(
         "ancient-india",
-        false
+        false,
       );
 
       return;
@@ -238,30 +338,51 @@ export class IndiaAtmosphere {
     if (!worldId) {
       this.setState(
         "ancient-india",
-        false
+        false,
       );
 
       return;
     }
 
-    const defaultYear = Number(
-      timelineRoot.dataset.defaultYear
-    );
-
     const timeline =
       getTimeline(worldId);
+
+    /*
+     * Prefer the timeline's current year.
+     * Fall back to its configured default year.
+     */
+
+    const yearValue =
+      timelineRoot.dataset.year ??
+      timelineRoot.dataset.defaultYear;
+
+    const currentYear =
+      Number(yearValue);
+
+    if (
+      !Number.isFinite(
+        currentYear,
+      )
+    ) {
+      this.setState(
+        "ancient-india",
+        false,
+      );
+
+      return;
+    }
 
     const era =
       timeline.eras.find(
         (item) =>
-          defaultYear >= item.start &&
-          defaultYear <= item.end
+          currentYear >= item.start &&
+          currentYear <= item.end,
       );
 
     if (era) {
       this.setState(
         this.eraToState(era),
-        false
+        false,
       );
 
       return;
@@ -269,7 +390,7 @@ export class IndiaAtmosphere {
 
     this.setState(
       "ancient-india",
-      false
+      false,
     );
   }
 
@@ -280,7 +401,7 @@ export class IndiaAtmosphere {
    */
 
   private handleTimelineChange = (
-    event: Event
+    event: Event,
   ): void => {
     const customEvent =
       event as CustomEvent<TimelineChangeDetail>;
@@ -297,18 +418,18 @@ export class IndiaAtmosphere {
 
     this.setState(
       state,
-      true
+      true,
     );
   };
 
   /*
    * ==================================================
-   * ERA → ATMOSPHERE STATE
+   * ERA → ATMOSPHERE
    * ==================================================
    */
 
   private eraToState(
-    era: TimelineEra
+    era: TimelineEra,
   ): AtmosphereState {
     switch (era.id) {
       case "ancient-india":
@@ -339,14 +460,14 @@ export class IndiaAtmosphere {
 
   private setState(
     state: AtmosphereState,
-    transition: boolean
+    transition: boolean,
   ): void {
     const next =
       this.states.get(state);
 
     if (!next) {
       console.warn(
-        `AION: Atmosphere state "${state}" was not found.`
+        `AION: Atmosphere state "${state}" was not found.`,
       );
 
       return;
@@ -354,7 +475,7 @@ export class IndiaAtmosphere {
 
     const previous =
       this.states.get(
-        this.currentState
+        this.currentState,
       );
 
     if (
@@ -365,9 +486,9 @@ export class IndiaAtmosphere {
     }
 
     /*
-     * ------------------------------------------------
-     * INSTANT INITIAL STATE
-     * ------------------------------------------------
+     * ==================================================
+     * INITIAL STATE
+     * ==================================================
      */
 
     if (!transition) {
@@ -377,23 +498,43 @@ export class IndiaAtmosphere {
             element === next
               ? "1"
               : "0";
-        }
+        },
       );
 
-      this.currentState = state;
+      this.currentState =
+        state;
 
       return;
     }
 
     /*
-     * ------------------------------------------------
+     * ==================================================
+     * CANCEL PREVIOUS ANIMATIONS
+     * ==================================================
+     *
+     * Prevent multiple timeline changes from
+     * stacking animations on the same elements.
+     */
+
+    this.states.forEach(
+      (element) => {
+        element.getAnimations().forEach(
+          (animation) =>
+            animation.cancel(),
+        );
+      },
+    );
+
+    /*
+     * ==================================================
      * CROSSFADE
-     * ------------------------------------------------
+     * ==================================================
      */
 
     next.style.opacity = "0";
 
-    this.currentState = state;
+    this.currentState =
+      state;
 
     animate(next, {
       opacity: [0, 1],
@@ -413,19 +554,23 @@ export class IndiaAtmosphere {
     }
 
     /*
-     * ------------------------------------------------
-     * HAZE RESPONSE
-     * ------------------------------------------------
+     * ==================================================
+     * HAZE
+     * ==================================================
      */
 
     const haze =
       this.root.querySelector<HTMLElement>(
-        "[data-atmosphere-haze]"
+        "[data-atmosphere-haze]",
       );
 
     if (haze) {
       animate(haze, {
-        opacity: [0.20, 0.42, 0.30],
+        opacity: [
+          0.20,
+          0.42,
+          0.30,
+        ],
         duration: 1400,
         ease: "inOut(2)",
       });
@@ -448,14 +593,17 @@ export class IndiaAtmosphere {
       new THREE.BufferGeometry();
 
     const positions =
-      new Float32Array(count * 3);
+      new Float32Array(
+        count * 3,
+      );
 
     for (
       let i = 0;
       i < count;
       i++
     ) {
-      const i3 = i * 3;
+      const i3 =
+        i * 3;
 
       positions[i3] =
         (Math.random() - 0.5) *
@@ -474,25 +622,35 @@ export class IndiaAtmosphere {
       "position",
       new THREE.BufferAttribute(
         positions,
-        3
-      )
+        3,
+      ),
     );
 
     const material =
       new THREE.PointsMaterial({
         color: 0xc8a15a,
+
         transparent: true,
-        opacity: 0.18,
+
+        /*
+         * Keep this subtle.
+         */
+
+        opacity: 0.14,
+
         size: 1.25,
+
         sizeAttenuation: false,
+
         depthWrite: false,
+
         blending:
           THREE.AdditiveBlending,
       });
 
     return new THREE.Points(
       geometry,
-      material
+      material,
     );
   }
 
@@ -503,6 +661,10 @@ export class IndiaAtmosphere {
    */
 
   private resize = (): void => {
+    if (this.destroyed) {
+      return;
+    }
+
     this.width =
       this.threeContainer.clientWidth ||
       window.innerWidth;
@@ -527,7 +689,7 @@ export class IndiaAtmosphere {
 
     this.renderer.setSize(
       this.width,
-      this.height
+      this.height,
     );
   };
 
@@ -538,14 +700,18 @@ export class IndiaAtmosphere {
    */
 
   private animate = (): void => {
+    if (this.destroyed) {
+      return;
+    }
+
     this.animationFrame =
       requestAnimationFrame(
-        this.animate
+        this.animate,
       );
 
     const positionAttribute =
       this.particles.geometry.getAttribute(
-        "position"
+        "position",
       ) as THREE.BufferAttribute;
 
     const positions =
@@ -557,13 +723,13 @@ export class IndiaAtmosphere {
       i += 3
     ) {
       /*
-       * Slow horizontal dust movement.
+       * Horizontal drift.
        */
 
       positions[i] += 0.007;
 
       /*
-       * Slow vertical dust movement.
+       * Vertical drift.
        */
 
       positions[i + 1] += 0.002;
@@ -597,7 +763,7 @@ export class IndiaAtmosphere {
       true;
 
     /*
-     * Extremely subtle rotation.
+     * Almost imperceptible movement.
      */
 
     this.particles.rotation.z +=
@@ -605,7 +771,7 @@ export class IndiaAtmosphere {
 
     this.renderer.render(
       this.scene,
-      this.camera
+      this.camera,
     );
   };
 
@@ -616,25 +782,49 @@ export class IndiaAtmosphere {
    */
 
   public destroy(): void {
+    if (this.destroyed) {
+      return;
+    }
+
+    this.destroyed = true;
+
     cancelAnimationFrame(
-      this.animationFrame
+      this.animationFrame,
     );
 
     window.removeEventListener(
       "resize",
-      this.resize
+      this.resize,
     );
 
     document.removeEventListener(
       "aion:timeline-change",
-      this.handleTimelineChange
+      this.handleTimelineChange,
     );
+
+    /*
+     * Dispose geometry.
+     */
 
     this.particles.geometry.dispose();
 
+    /*
+     * Dispose material.
+     */
+
     this.particles.material.dispose();
 
+    /*
+     * Dispose renderer.
+     */
+
     this.renderer.dispose();
+
+    this.renderer.forceContextLoss();
+
+    /*
+     * Remove canvas.
+     */
 
     this.renderer.domElement.remove();
   }
