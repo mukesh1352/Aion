@@ -13,33 +13,34 @@ import {
   resolveExperience,
 } from "../../lib/experience/resolver";
 
+import {
+  buildEntityIndex,
+} from "../../lib/knowledge/entities";
+
+import {
+  detectEntityReferences,
+} from "../../lib/knowledge/references";
+
+import {
+  resolveReferences,
+} from "../../lib/knowledge/resolver";
 
 /* =====================================================
    STATIC PATHS
    ===================================================== */
 
 export async function getStaticPaths() {
-
   const entries =
-    await getCollection(
-      "historicalContent"
-    );
+    await getCollection("historicalContent");
 
-
-  return entries.map(
-    (entry) => ({
-
-      params: {
-        slug: entry.id,
-      },
-
-      props: {
-        entry,
-      },
-
-    })
-  );
-
+  return entries.map((entry) => ({
+    params: {
+      slug: entry.id,
+    },
+    props: {
+      entry,
+    },
+  }));
 }
 
 
@@ -47,23 +48,106 @@ export async function getStaticPaths() {
    CONTENT
    ===================================================== */
 
-const { entry } =
-  Astro.props;
+const { entry } = Astro.props;
+
+const { Content } = await render(entry);
+
+const data = entry.data;
 
 
-const { Content } =
-  await render(entry);
+/* =====================================================
+   AION ENTITY REFERENCES
+   =====================================================
+
+   References are derived from the article itself.
+
+   Contributors do NOT need to maintain a manual
+   "related people", "related places", etc. list.
+
+   Example Markdown:
+
+   Chandragupta Maurya founded the Mauryan kingdom
+   with the help of Chanakya.
+
+   If both entities exist in AION:
+
+       Chandragupta Maurya
+              ↓
+          Chanakya
+
+   becomes a navigable relationship automatically.
+
+   If Chanakya is added later, the relationship
+   automatically becomes available on the next build.
+   ===================================================== */
+
+const allEntries =
+  await getCollection("historicalContent");
+
+const entityIndex =
+  buildEntityIndex(allEntries);
 
 
-const data =
-  entry.data;
+/*
+ * The current first-generation detector operates
+ * against the Markdown body.
+ *
+ * This will later be upgraded to a Markdown AST
+ * extractor so that existing links, code blocks,
+ * image syntax, etc. are ignored safely.
+ */
+const detectedReferences =
+  detectEntityReferences(
+    entry.body ?? "",
+    entityIndex,
+  );
+
+
+/*
+ * Convert entity IDs into navigation-ready entities.
+ */
+const resolvedReferences =
+  resolveReferences(
+    detectedReferences,
+    entityIndex,
+  );
+
+
+/*
+ * Only show:
+ *
+ * 1. resolved entities
+ * 2. entities different from the current page
+ * 3. one card per entity
+ *
+ * Multiple mentions of Chanakya inside an article
+ * should still produce only one related item.
+ */
+const relatedReferences =
+  Array.from(
+    new Map(
+      resolvedReferences
+        .filter(
+          (reference) =>
+            reference.resolved &&
+            reference.entityId !== data.id &&
+            reference.href !== null,
+        )
+        .map(
+          (reference) => [
+            reference.entityId,
+            reference,
+          ],
+        ),
+    ).values(),
+  );
 
 
 /* =====================================================
    AION EXPERIENCE
    ===================================================== */
 
-/*
+/**
  * The visual experience is determined by:
  *
  * WORLD
@@ -74,18 +158,14 @@ const data =
  *
  * Example:
  *
- * india:classical-india:person
+ *   india:classical-india:person
  *
  * or:
  *
- * india:modern-india:person
+ *   india:modern-india:person
  *
- * Adding a new world/era/type only ever means adding
- * an entry to `combinations.ts` — everything below
- * (fonts, motion, pointer interaction) reads off the
- * profile's flat fields (material / typography /
- * titleMotion / interaction / atmosphere), so nothing
- * here needs to change.
+ * The experience engine remains completely independent
+ * from the reference system.
  */
 
 const experience =
@@ -94,29 +174,24 @@ const experience =
     data.era,
     data.type,
   );
-
 ---
-
 
 <Layout
   title={`${data.title} — AION`}
   description={data.summary}
 >
-
-<main
-  class="historical-entry"
-
-  data-world-id={data.world}
-  data-era-id={data.era}
-  data-content-type={data.type}
-
-  data-material={experience.material}
-  data-texture={experience.texture}
-  data-typography={experience.typography}
-  data-title-motion={experience.titleMotion}
-  data-interaction={experience.interaction}
-  data-atmosphere={experience.atmosphere}
->
+  <main
+    class="historical-entry"
+    data-world-id={data.world}
+    data-era-id={data.era}
+    data-content-type={data.type}
+    data-material={experience.material}
+    data-texture={experience.texture}
+    data-typography={experience.typography}
+    data-title-motion={experience.titleMotion}
+    data-interaction={experience.interaction}
+    data-atmosphere={experience.atmosphere}
+  >
 
     <!-- =================================================
          HISTORICAL MATERIAL
@@ -133,9 +208,7 @@ const experience =
          ARTICLE SHELL
          ================================================= -->
 
-    <div
-      class="historical-entry-shell"
-    >
+    <div class="historical-entry-shell">
 
 
       <!-- =================================================
@@ -147,7 +220,6 @@ const experience =
         data-entry-header
       >
 
-
         <!-- BACK -->
 
         <a
@@ -155,17 +227,13 @@ const experience =
           class="historical-back"
           data-entry-element
         >
-
-          <span
-            class="back-mark"
-          >
+          <span class="back-mark">
             ←
           </span>
 
           <span>
             INDIA
           </span>
-
         </a>
 
 
@@ -175,22 +243,15 @@ const experience =
           class="historical-entry-meta"
           data-entry-element
         >
-
-          <span
-            class="historical-type"
-          >
+          <span class="historical-type">
             {data.type.toUpperCase()}
           </span>
 
-
-          <span
-            class="historical-status"
-          >
+          <span class="historical-status">
             {data.status
               .replaceAll("-", " ")
               .toUpperCase()}
           </span>
-
         </div>
 
 
@@ -202,7 +263,6 @@ const experience =
           class="historical-title-wrap"
           data-entry-title-wrap
         >
-
 
           <!-- Physical/depth shadow -->
 
@@ -216,9 +276,7 @@ const experience =
 
           <!-- Actual title -->
 
-          <h1
-            data-entry-title
-          >
+          <h1 data-entry-title>
             {data.title}
           </h1>
 
@@ -238,8 +296,8 @@ const experience =
           <div
             class="historical-title-light"
             aria-hidden="true"
-          ></div>
-
+          >
+          </div>
 
         </div>
 
@@ -250,14 +308,12 @@ const experience =
 
         {
           data.subtitle && (
-
             <p
               class="historical-subtitle"
               data-entry-element
             >
               {data.subtitle}
             </p>
-
           )
         }
 
@@ -281,26 +337,18 @@ const experience =
         {
           data.tags &&
           data.tags.length > 0 && (
-
             <div
               class="historical-tags"
               data-entry-tags
             >
-
               {
-                data.tags.map(
-                  (tag) => (
-
-                    <span>
-                      {tag}
-                    </span>
-
-                  )
-                )
+                data.tags.map((tag) => (
+                  <span>
+                    {tag}
+                  </span>
+                ))
               }
-
             </div>
-
           )
         }
 
@@ -313,11 +361,8 @@ const experience =
           class="historical-header-rule"
           aria-hidden="true"
         >
-
           <span></span>
-
         </div>
-
 
       </header>
 
@@ -330,28 +375,93 @@ const experience =
         class="historical-entry-body"
         data-historical-body
       >
-
         <Content />
-
       </article>
 
+
+      <!-- =================================================
+           RELATED TO STUDY
+           =================================================
+
+           This section is generated automatically from
+           references detected inside the Markdown.
+
+           There is NO manual related-content list here.
+           ================================================= -->
+
+      {
+        relatedReferences.length > 0 && (
+          <section
+            class="historical-related"
+            aria-labelledby="historical-related-title"
+            data-related-section
+          >
+
+            <div class="historical-related-header">
+              <span class="historical-related-eyebrow">
+                CONTINUE EXPLORING
+              </span>
+
+              <h2
+                id="historical-related-title"
+                class="historical-related-title"
+              >
+                Related to Study
+              </h2>
+
+              <p class="historical-related-introduction">
+                People, places, events, stories, and facts
+                mentioned in this account.
+              </p>
+            </div>
+
+
+            <div class="historical-related-list">
+
+              {
+                relatedReferences.map((reference) => (
+                  <a
+                    href={reference.href ?? "#"}
+                    class="historical-related-item"
+                    data-related-item
+                  >
+
+                    <span class="historical-related-type">
+                      {reference.type.toUpperCase()}
+                    </span>
+
+                    <span class="historical-related-name">
+                      {reference.title}
+                    </span>
+
+                    <span
+                      class="historical-related-arrow"
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+
+                  </a>
+                ))
+              }
+
+            </div>
+
+          </section>
+        )
+      }
 
     </div>
 
   </main>
-
 </Layout>
-
-
 <style>
-
 
 /* =========================================================
    AION HISTORICAL TYPOGRAPHY
    ========================================================= */
 
 :global(:root) {
-
   --aion-font-ui:
     "Inter",
     system-ui,
@@ -360,26 +470,11 @@ const experience =
     "Segoe UI",
     sans-serif;
 
-
-  /*
-   * Monumental / inscriptional. Ancient (clay) and
-   * Classical (stone) both read off this — ancient
-   * content leans on it a little more loosely via
-   * the "dust" title motion below.
-   */
-
   --aion-font-inscription:
     "Cinzel Decorative",
     "Cinzel",
     Georgia,
     serif;
-
-
-  /*
-   * Old literary / manuscript character. Used for
-   * medieval parchment and any classical/medieval
-   * scroll (palm-leaf) content.
-   */
 
   --aion-font-scripture:
     "IM FELL English",
@@ -388,24 +483,11 @@ const experience =
     "Times New Roman",
     serif;
 
-
-  /*
-   * Supporting historical display. Early modern
-   * paper-era content.
-   */
-
   --aion-font-display:
     "Cormorant Garamond",
     Georgia,
     "Times New Roman",
     serif;
-
-
-  /*
-   * Typewritten / bureaucratic character. Modern
-   * archival documents (colonial & independence-era
-   * records).
-   */
 
   --aion-font-archival:
     "Special Elite",
@@ -413,17 +495,11 @@ const experience =
     "Courier New",
     monospace;
 
-
-  /*
-   * Long-form reading.
-   */
-
   --aion-font-reading:
     "Source Serif 4",
     Georgia,
     "Times New Roman",
     serif;
-
 }
 
 
@@ -432,25 +508,12 @@ const experience =
    ========================================================= */
 
 .historical-entry {
-
-  position:
-    relative;
-
-  min-height:
-    100vh;
-
-  overflow-x:
-    hidden;
-
-  isolation:
-    isolate;
-
-  background:
-    transparent;
-
-  color:
-    #e8e3d8;
-
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  isolation: isolate;
+  background: transparent;
+  color: #e8e3d8;
 }
 
 
@@ -459,16 +522,9 @@ const experience =
    ========================================================= */
 
 .historical-entry-shell {
-
-  position:
-    relative;
-
-  z-index:
-    2;
-
-  width:
-    100%;
-
+  position: relative;
+  z-index: 2;
+  width: 100%;
 }
 
 
@@ -477,19 +533,13 @@ const experience =
    ========================================================= */
 
 .historical-entry-header {
+  width: min(
+    920px,
+    calc(100% - 48px)
+  );
 
-  width:
-    min(
-      920px,
-      calc(100% - 48px)
-    );
-
-  margin:
-    0 auto;
-
-  padding:
-    110px 0 100px;
-
+  margin: 0 auto;
+  padding: 110px 0 100px;
 }
 
 
@@ -498,76 +548,39 @@ const experience =
    ========================================================= */
 
 .historical-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 
-  display:
-    inline-flex;
+  margin-bottom: 58px;
 
-  align-items:
-    center;
+  color: rgba(200, 161, 90, 0.72);
 
-  gap:
-    10px;
+  font-family: var(--aion-font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
 
-  margin-bottom:
-    58px;
-
-  color:
-    rgba(
-      200,
-      161,
-      90,
-      0.72
-    );
-
-  font-family:
-    var(--aion-font-ui);
-
-  font-size:
-    10px;
-
-  font-weight:
-    600;
-
-  letter-spacing:
-    0.22em;
-
-  text-decoration:
-    none;
+  text-decoration: none;
 
   transition:
     color 240ms ease;
-
 }
-
 
 .historical-back:hover {
-
-  color:
-    #e8e3d8;
-
+  color: #e8e3d8;
 }
 
-
 .back-mark {
-
-  font-size:
-    15px;
-
-  line-height:
-    1;
+  font-size: 15px;
+  line-height: 1;
 
   transition:
     transform 300ms ease;
-
 }
 
-
-.historical-back:hover
-  .back-mark {
-
-  transform:
-    translateX(-5px);
-
+.historical-back:hover .back-mark {
+  transform: translateX(-5px);
 }
 
 
@@ -576,80 +589,35 @@ const experience =
    ========================================================= */
 
 .historical-entry-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
 
-  display:
-    flex;
+  margin-bottom: 30px;
 
-  align-items:
-    center;
-
-  flex-wrap:
-    wrap;
-
-  gap:
-    14px;
-
-  margin-bottom:
-    30px;
-
-  font-family:
-    var(--aion-font-ui);
-
+  font-family: var(--aion-font-ui);
 }
-
 
 .historical-type,
 .historical-status {
+  color: rgba(200, 161, 90, 0.68);
 
-  color:
-    rgba(
-      200,
-      161,
-      90,
-      0.68
-    );
-
-  font-size:
-    9px;
-
-  font-weight:
-    600;
-
-  letter-spacing:
-    0.19em;
-
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.19em;
 }
-
 
 .historical-status {
-
-  color:
-    rgba(
-      232,
-      227,
-      216,
-      0.38
-    );
-
+  color: rgba(232, 227, 216, 0.38);
 }
 
-
 .historical-type::after {
+  content: "·";
 
-  content:
-    "·";
+  margin-left: 14px;
 
-  margin-left:
-    14px;
-
-  color:
-    rgba(
-      200,
-      161,
-      90,
-      0.30
-    );
-
+  color: rgba(200, 161, 90, 0.30);
 }
 
 
@@ -658,53 +626,33 @@ const experience =
    ========================================================= */
 
 .historical-title-wrap {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
 
-  position:
-    relative;
+  overflow: visible;
 
-  width:
-    fit-content;
+  transform-origin: center left;
 
-  max-width:
-    100%;
-
-  overflow:
-    visible;
-
-  transform-origin:
-    center left;
-
-  will-change:
-    transform;
-
+  will-change: transform;
 }
 
 
 /* =========================================================
    MAIN TITLE
-   default font is the inscription face; data-typography
-   below overrides it per era.
    ========================================================= */
 
 .historical-entry-header h1 {
+  position: relative;
+  z-index: 3;
 
-  position:
-    relative;
+  max-width: 900px;
 
-  z-index:
-    3;
+  margin: 0;
 
-  max-width:
-    900px;
+  color: #e8e3d8;
 
-  margin:
-    0;
-
-  color:
-    #e8e3d8;
-
-  font-family:
-    var(--aion-font-inscription);
+  font-family: var(--aion-font-inscription);
 
   font-size:
     clamp(
@@ -713,24 +661,19 @@ const experience =
       8rem
     );
 
-  font-weight:
-    400;
+  font-weight: 400;
 
-  line-height:
-    0.90;
+  line-height: 0.90;
 
-  letter-spacing:
-    -0.025em;
+  letter-spacing: -0.025em;
 
-  text-wrap:
-    balance;
+  text-wrap: balance;
 
   will-change:
     transform,
     opacity,
     filter,
     letter-spacing;
-
 }
 
 
@@ -739,26 +682,13 @@ const experience =
    ========================================================= */
 
 .historical-title-shadow {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
 
-  position:
-    absolute;
+  color: rgba(0, 0, 0, 0.55);
 
-  z-index:
-    1;
-
-  inset:
-    0;
-
-  color:
-    rgba(
-      0,
-      0,
-      0,
-      0.55
-    );
-
-  font-family:
-    inherit;
+  font-family: inherit;
 
   font-size:
     clamp(
@@ -767,24 +697,15 @@ const experience =
       8rem
     );
 
-  font-weight:
-    400;
+  font-weight: 400;
 
-  line-height:
-    0.90;
+  line-height: 0.90;
 
-  letter-spacing:
-    -0.025em;
+  letter-spacing: -0.025em;
 
-  transform:
-    translate(
-      0,
-      3px
-    );
+  transform: translate(0, 3px);
 
-  pointer-events:
-    none;
-
+  pointer-events: none;
 }
 
 
@@ -793,21 +714,13 @@ const experience =
    ========================================================= */
 
 .historical-title-highlight {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
 
-  position:
-    absolute;
+  color: transparent;
 
-  z-index:
-    4;
-
-  inset:
-    0;
-
-  color:
-    transparent;
-
-  font-family:
-    inherit;
+  font-family: inherit;
 
   font-size:
     clamp(
@@ -816,39 +729,25 @@ const experience =
       8rem
     );
 
-  font-weight:
-    400;
+  font-weight: 400;
 
-  line-height:
-    0.90;
+  line-height: 0.90;
 
-  letter-spacing:
-    -0.025em;
+  letter-spacing: -0.025em;
 
   background:
     linear-gradient(
       180deg,
-      rgba(
-        255,
-        255,
-        255,
-        0.16
-      ),
+      rgba(255, 255, 255, 0.16),
       transparent 35%
     );
 
-  background-clip:
-    text;
+  background-clip: text;
+  -webkit-background-clip: text;
 
-  -webkit-background-clip:
-    text;
+  pointer-events: none;
 
-  pointer-events:
-    none;
-
-  opacity:
-    0.45;
-
+  opacity: 0.45;
 }
 
 
@@ -857,38 +756,22 @@ const experience =
    ========================================================= */
 
 .historical-title-light {
+  position: absolute;
+  z-index: 5;
 
-  position:
-    absolute;
+  top: -20%;
+  left: -30%;
 
-  z-index:
-    5;
+  width: 35%;
+  height: 150%;
 
-  top:
-    -20%;
-
-  left:
-    -30%;
-
-  width:
-    35%;
-
-  height:
-    150%;
-
-  opacity:
-    0;
+  opacity: 0;
 
   background:
     linear-gradient(
       90deg,
       transparent,
-      rgba(
-        255,
-        240,
-        195,
-        0.18
-      ),
+      rgba(255, 240, 195, 0.18),
       transparent
     );
 
@@ -896,73 +779,40 @@ const experience =
     skewX(-18deg)
     translateX(-180%);
 
-  pointer-events:
-    none;
-
+  pointer-events: none;
 }
 
 
-/* =========================================================================
-   TYPOGRAPHY (data-typography)
-   Controls the FONT for the title (and the two ghost
-   layers, via `inherit`, above). Kept separate from
-   title MOTION below, so a new era can mix and match
-   e.g. "manuscript font + dust motion" freely.
-   ========================================================================= */
+/* =========================================================
+   TYPOGRAPHY
+   ========================================================= */
 
 .historical-entry[data-typography="inscription"]
-  .historical-entry-header h1 {
-
-  font-family:
-    var(--aion-font-inscription);
-
-  font-weight:
-    400;
-
-  letter-spacing:
-    -0.025em;
-
+.historical-entry-header h1 {
+  font-family: var(--aion-font-inscription);
+  font-weight: 400;
+  letter-spacing: -0.025em;
 }
-
 
 .historical-entry[data-typography="manuscript"]
-  .historical-entry-header h1 {
-
-  font-family:
-    var(--aion-font-scripture);
-
-  font-weight:
-    400;
-
-  letter-spacing:
-    -0.01em;
-
+.historical-entry-header h1 {
+  font-family: var(--aion-font-scripture);
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
-
 
 .historical-entry[data-typography="historical-display"]
-  .historical-entry-header h1 {
-
-  font-family:
-    var(--aion-font-display);
-
-  font-weight:
-    500;
-
-  letter-spacing:
-    -0.035em;
-
+.historical-entry-header h1 {
+  font-family: var(--aion-font-display);
+  font-weight: 500;
+  letter-spacing: -0.035em;
 }
 
-
 .historical-entry[data-typography="archival"]
-  .historical-entry-header h1 {
+.historical-entry-header h1 {
+  font-family: var(--aion-font-archival);
 
-  font-family:
-    var(--aion-font-archival);
-
-  font-weight:
-    400;
+  font-weight: 400;
 
   font-size:
     clamp(
@@ -971,179 +821,83 @@ const experience =
       5rem
     );
 
-  letter-spacing:
-    0.01em;
+  letter-spacing: 0.01em;
 
-  text-transform:
-    uppercase;
-
+  text-transform: uppercase;
 }
-
 
 .historical-entry[data-typography="plain"]
-  .historical-entry-header h1 {
-
-  font-family:
-    var(--aion-font-ui);
-
-  font-weight:
-    600;
-
-  letter-spacing:
-    -0.02em;
-
+.historical-entry-header h1 {
+  font-family: var(--aion-font-ui);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 
-/* =========================================================================
-   TITLE MOTION (data-title-motion)
-   Purely the carved/inked/printed *feel* (shadow,
-   ghost-layer opacity). The entrance animation itself
-   lives in the script below, driven by the same
-   attribute via TITLE_MOTION_CONFIG.
-   ========================================================================= */
-
-/* ENGRAVE — carved stone, hard highlight/shadow */
+/* =========================================================
+   TITLE MOTION
+   ========================================================= */
 
 .historical-entry[data-title-motion="engrave"]
-  .historical-entry-header h1 {
-
+.historical-entry-header h1 {
   text-shadow:
-
-    0 1px 0
-      rgba(
-        255,
-        255,
-        255,
-        0.08
-      ),
-
-    0 -1px 0
-      rgba(
-        0,
-        0,
-        0,
-        0.55
-      ),
-
-    0 5px 18px
-      rgba(
-        0,
-        0,
-        0,
-        0.55
-      );
-
-}
-
-
-/* INK — softer bleed, no hard carve */
-
-.historical-entry[data-title-motion="ink"]
-  .historical-entry-header h1 {
-
-  text-shadow:
-    0 2px 8px
-      rgba(
-        20,
-        12,
-        4,
-        0.45
-      );
-
+    0 1px 0 rgba(255, 255, 255, 0.08),
+    0 -1px 0 rgba(0, 0, 0, 0.55),
+    0 5px 18px rgba(0, 0, 0, 0.55);
 }
 
 .historical-entry[data-title-motion="ink"]
-  .historical-title-highlight {
+.historical-entry-header h1 {
+  text-shadow:
+    0 2px 8px rgba(20, 12, 4, 0.45);
+}
 
-  opacity:
-    0.30;
+.historical-entry[data-title-motion="ink"]
+.historical-title-highlight {
+  opacity: 0.30;
 
   background:
     linear-gradient(
       180deg,
-      rgba(
-        255,
-        244,
-        214,
-        0.10
-      ),
+      rgba(255, 244, 214, 0.10),
       transparent 40%
     );
-
-}
-
-
-/* DUST — hazy, low-contrast, as if still half-buried */
-
-.historical-entry[data-title-motion="dust"]
-  .historical-entry-header h1 {
-
-  text-shadow:
-    0 3px 20px
-      rgba(
-        0,
-        0,
-        0,
-        0.40
-      );
-
 }
 
 .historical-entry[data-title-motion="dust"]
-  .historical-title-highlight {
-
-  opacity:
-    0.22;
-
+.historical-entry-header h1 {
+  text-shadow:
+    0 3px 20px rgba(0, 0, 0, 0.40);
 }
 
-
-/* PRINT — crisp inked print onto archival paper */
-
-.historical-entry[data-title-motion="print"]
-  .historical-entry-header h1 {
-
-  text-shadow:
-    0 2px 12px
-      rgba(
-        0,
-        0,
-        0,
-        0.38
-      );
-
+.historical-entry[data-title-motion="dust"]
+.historical-title-highlight {
+  opacity: 0.22;
 }
 
 .historical-entry[data-title-motion="print"]
-  .historical-title-highlight {
-
-  opacity:
-    0.18;
-
-}
-
-
-/* PLAIN — no flourish, fallback */
-
-.historical-entry[data-title-motion="plain"]
-  .historical-entry-header h1 {
-
+.historical-entry-header h1 {
   text-shadow:
-    none;
+    0 2px 12px rgba(0, 0, 0, 0.38);
+}
 
+.historical-entry[data-title-motion="print"]
+.historical-title-highlight {
+  opacity: 0.18;
 }
 
 .historical-entry[data-title-motion="plain"]
-  .historical-title-shadow,
-.historical-entry[data-title-motion="plain"]
-  .historical-title-highlight,
-.historical-entry[data-title-motion="plain"]
-  .historical-title-light {
+.historical-entry-header h1 {
+  text-shadow: none;
+}
 
-  display:
-    none;
-
+.historical-entry[data-title-motion="plain"]
+.historical-title-shadow,
+.historical-entry[data-title-motion="plain"]
+.historical-title-highlight,
+.historical-entry[data-title-motion="plain"]
+.historical-title-light {
+  display: none;
 }
 
 
@@ -1152,23 +906,13 @@ const experience =
    ========================================================= */
 
 .historical-subtitle {
+  max-width: 680px;
 
-  max-width:
-    680px;
+  margin: 32px 0 0;
 
-  margin:
-    32px 0 0;
+  color: rgba(200, 161, 90, 0.82);
 
-  color:
-    rgba(
-      200,
-      161,
-      90,
-      0.82
-    );
-
-  font-family:
-    var(--aion-font-scripture);
+  font-family: var(--aion-font-scripture);
 
   font-size:
     clamp(
@@ -1177,15 +921,10 @@ const experience =
       1.55rem
     );
 
-  font-weight:
-    400;
+  font-weight: 400;
+  font-style: italic;
 
-  font-style:
-    italic;
-
-  line-height:
-    1.55;
-
+  line-height: 1.55;
 }
 
 
@@ -1194,30 +933,16 @@ const experience =
    ========================================================= */
 
 .historical-summary {
+  max-width: 680px;
 
-  max-width:
-    680px;
+  margin: 34px 0 0;
 
-  margin:
-    34px 0 0;
+  color: rgba(232, 227, 216, 0.62);
 
-  color:
-    rgba(
-      232,
-      227,
-      216,
-      0.62
-    );
+  font-family: var(--aion-font-reading);
 
-  font-family:
-    var(--aion-font-reading);
-
-  font-size:
-    17px;
-
-  line-height:
-    1.9;
-
+  font-size: 17px;
+  line-height: 1.9;
 }
 
 
@@ -1226,64 +951,31 @@ const experience =
    ========================================================= */
 
 .historical-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 
-  display:
-    flex;
+  margin-top: 32px;
 
-  flex-wrap:
-    wrap;
-
-  gap:
-    8px;
-
-  margin-top:
-    32px;
-
-  font-family:
-    var(--aion-font-ui);
-
+  font-family: var(--aion-font-ui);
 }
 
-
 .historical-tags span {
-
-  padding:
-    5px 9px;
+  padding: 5px 9px;
 
   border:
     1px solid
-    rgba(
-      232,
-      227,
-      216,
-      0.08
-    );
+    rgba(232, 227, 216, 0.08);
 
   background:
-    rgba(
-      21,
-      24,
-      29,
-      0.16
-    );
+    rgba(21, 24, 29, 0.16);
 
   color:
-    rgba(
-      232,
-      227,
-      216,
-      0.38
-    );
+    rgba(232, 227, 216, 0.38);
 
-  font-size:
-    9px;
-
-  letter-spacing:
-    0.08em;
-
-  text-transform:
-    uppercase;
-
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 
@@ -1292,60 +984,33 @@ const experience =
    ========================================================= */
 
 .historical-header-rule {
+  width: 100%;
+  height: 1px;
 
-  width:
-    100%;
+  margin-top: 88px;
 
-  height:
-    1px;
-
-  margin-top:
-    88px;
-
-  overflow:
-    hidden;
+  overflow: hidden;
 
   background:
     linear-gradient(
       90deg,
       transparent,
-      rgba(
-        200,
-        161,
-        90,
-        0.10
-      ),
+      rgba(200, 161, 90, 0.10),
       transparent
     );
-
 }
 
-
 .historical-header-rule span {
+  display: block;
 
-  display:
-    block;
-
-  width:
-    30%;
-
-  height:
-    1px;
+  width: 30%;
+  height: 1px;
 
   background:
-    rgba(
-      200,
-      161,
-      90,
-      0.42
-    );
+    rgba(200, 161, 90, 0.42);
 
-  transform:
-    scaleX(0);
-
-  transform-origin:
-    left center;
-
+  transform: scaleX(0);
+  transform-origin: left center;
 }
 
 
@@ -1354,99 +1019,57 @@ const experience =
    ========================================================= */
 
 .historical-entry-body {
+  width: min(
+    760px,
+    calc(100% - 48px)
+  );
 
-  width:
-    min(
-      760px,
-      calc(100% - 48px)
-    );
-
-  margin:
-    0 auto;
+  margin: 0 auto;
 
   padding:
-    10px 0 220px;
+    10px 0 180px;
 
   color:
-    rgba(
-      232,
-      227,
-      216,
-      0.78
-    );
+    rgba(232, 227, 216, 0.78);
 
   font-family:
     var(--aion-font-reading);
 
-  font-size:
-    19px;
-
-  line-height:
-    2;
-
+  font-size: 19px;
+  line-height: 2;
 }
 
 
-/* =========================================================================
-   MARKDOWN BODY TYPOGRAPHY OVERRIDES
-   The body copy stays on the reading serif for
-   legibility across every era, but headings inside
-   the markdown pick up the same typography choice as
-   the page title so the whole article feels of one era.
-   ========================================================================= */
+/* =========================================================
+   MARKDOWN TYPOGRAPHY
+   ========================================================= */
 
 .historical-entry[data-typography="manuscript"]
-  .historical-entry-body
-  :global(h2),
+.historical-entry-body :global(h2),
 .historical-entry[data-typography="manuscript"]
-  .historical-entry-body
-  :global(h3) {
-
-  font-family:
-    var(--aion-font-scripture);
-
+.historical-entry-body :global(h3) {
+  font-family: var(--aion-font-scripture);
 }
 
-
 .historical-entry[data-typography="historical-display"]
-  .historical-entry-body
-  :global(h2),
+.historical-entry-body :global(h2),
 .historical-entry[data-typography="historical-display"]
-  .historical-entry-body
-  :global(h3) {
-
-  font-family:
-    var(--aion-font-display);
-
+.historical-entry-body :global(h3) {
+  font-family: var(--aion-font-display);
 }
-
 
 .historical-entry[data-typography="archival"]
-  .historical-entry-body
-  :global(h2) {
-
-  font-family:
-    var(--aion-font-archival);
-
-  text-transform:
-    uppercase;
-
-  letter-spacing:
-    0.02em;
-
+.historical-entry-body :global(h2) {
+  font-family: var(--aion-font-archival);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
-
 .historical-entry[data-typography="plain"]
-  .historical-entry-body
-  :global(h2),
+.historical-entry-body :global(h2),
 .historical-entry[data-typography="plain"]
-  .historical-entry-body
-  :global(h3) {
-
-  font-family:
-    var(--aion-font-ui);
-
+.historical-entry-body :global(h3) {
+  font-family: var(--aion-font-ui);
 }
 
 
@@ -1455,18 +1078,14 @@ const experience =
    ========================================================= */
 
 .historical-entry-body
-  :global(.historical-section) {
+:global(.historical-section) {
+  position: relative;
 
-  position:
-    relative;
-
-  margin:
-    150px 0;
+  margin: 150px 0;
 
   will-change:
     transform,
     opacity;
-
 }
 
 
@@ -1474,20 +1093,14 @@ const experience =
    SECTION HEADING
    ========================================================= */
 
-.historical-entry-body
-  :global(h2) {
+.historical-entry-body :global(h2) {
+  position: relative;
 
-  position:
-    relative;
+  margin: 0 0 36px;
 
-  margin:
-    0 0 36px;
+  color: #e8e3d8;
 
-  color:
-    #e8e3d8;
-
-  font-family:
-    var(--aion-font-scripture);
+  font-family: var(--aion-font-scripture);
 
   font-size:
     clamp(
@@ -1496,63 +1109,40 @@ const experience =
       3.5rem
     );
 
-  font-weight:
-    400;
+  font-weight: 400;
 
-  line-height:
-    1.08;
+  line-height: 1.08;
 
-  letter-spacing:
-    -0.015em;
+  letter-spacing: -0.015em;
 
-  scroll-margin-top:
-    120px;
+  scroll-margin-top: 120px;
 
   will-change:
     transform,
     opacity,
     filter,
     clip-path;
-
 }
 
-
-/* =========================================================
-   SECTION DIVIDER
-   ========================================================= */
-
 .historical-entry-body
-  :global(h2::after) {
+:global(h2::after) {
+  content: "";
 
-  content:
-    "";
+  display: block;
 
-  display:
-    block;
+  width: 70px;
+  height: 1px;
 
-  width:
-    70px;
-
-  height:
-    1px;
-
-  margin-top:
-    22px;
+  margin-top: 22px;
 
   background:
-    rgba(
-      200,
-      161,
-      90,
-      0.42
-    );
+    rgba(200, 161, 90, 0.42);
 
   transform:
     scaleX(1);
 
   transform-origin:
     left center;
-
 }
 
 
@@ -1560,32 +1150,20 @@ const experience =
    H3
    ========================================================= */
 
-.historical-entry-body
-  :global(h3) {
-
-  margin:
-    72px 0 22px;
+.historical-entry-body :global(h3) {
+  margin: 72px 0 22px;
 
   color:
-    rgba(
-      232,
-      227,
-      216,
-      0.88
-    );
+    rgba(232, 227, 216, 0.88);
 
   font-family:
     var(--aion-font-scripture);
 
-  font-size:
-    1.7rem;
+  font-size: 1.7rem;
 
-  font-weight:
-    400;
+  font-weight: 400;
 
-  line-height:
-    1.3;
-
+  line-height: 1.3;
 }
 
 
@@ -1593,15 +1171,9 @@ const experience =
    PARAGRAPHS
    ========================================================= */
 
-.historical-entry-body
-  :global(p) {
-
-  max-width:
-    760px;
-
-  margin:
-    0 0 30px;
-
+.historical-entry-body :global(p) {
+  max-width: 760px;
+  margin: 0 0 30px;
 }
 
 
@@ -1610,28 +1182,21 @@ const experience =
    ========================================================= */
 
 .historical-entry-body
-  :global(
-    .historical-section > p:first-of-type::first-letter
-  ) {
-
-  float:
-    left;
+:global(
+  .historical-section > p:first-of-type::first-letter
+) {
+  float: left;
 
   margin:
     8px 10px 0 0;
 
-  color:
-    #c8a15a;
+  color: #c8a15a;
 
   font-family:
     var(--aion-font-inscription);
 
-  font-size:
-    3.4em;
-
-  line-height:
-    0.78;
-
+  font-size: 3.4em;
+  line-height: 0.78;
 }
 
 
@@ -1639,15 +1204,9 @@ const experience =
    STRONG
    ========================================================= */
 
-.historical-entry-body
-  :global(strong) {
-
-  color:
-    #e8e3d8;
-
-  font-weight:
-    600;
-
+.historical-entry-body :global(strong) {
+  color: #e8e3d8;
+  font-weight: 600;
 }
 
 
@@ -1655,20 +1214,12 @@ const experience =
    EMPHASIS
    ========================================================= */
 
-.historical-entry-body
-  :global(em) {
-
+.historical-entry-body :global(em) {
   color:
-    rgba(
-      232,
-      227,
-      216,
-      0.86
-    );
+    rgba(232, 227, 216, 0.86);
 
   font-family:
     var(--aion-font-scripture);
-
 }
 
 
@@ -1676,29 +1227,17 @@ const experience =
    LISTS
    ========================================================= */
 
-.historical-entry-body
-  :global(ul),
-.historical-entry-body
-  :global(ol) {
+.historical-entry-body :global(ul),
+.historical-entry-body :global(ol) {
+  max-width: 760px;
 
-  max-width:
-    760px;
+  margin: 34px 0;
 
-  margin:
-    34px 0;
-
-  padding-left:
-    30px;
-
+  padding-left: 30px;
 }
 
-
-.historical-entry-body
-  :global(li) {
-
-  margin:
-    11px 0;
-
+.historical-entry-body :global(li) {
+  margin: 11px 0;
 }
 
 
@@ -1706,38 +1245,22 @@ const experience =
    LINKS
    ========================================================= */
 
-.historical-entry-body
-  :global(a) {
+.historical-entry-body :global(a) {
+  color: #c8a15a;
 
-  color:
-    #c8a15a;
-
-  text-decoration:
-    underline;
+  text-decoration: underline;
 
   text-decoration-color:
-    rgba(
-      200,
-      161,
-      90,
-      0.35
-    );
+    rgba(200, 161, 90, 0.35);
 
-  text-underline-offset:
-    4px;
+  text-underline-offset: 4px;
 
   transition:
     color 220ms ease;
-
 }
 
-
-.historical-entry-body
-  :global(a:hover) {
-
-  color:
-    #e8e3d8;
-
+.historical-entry-body :global(a:hover) {
+  color: #e8e3d8;
 }
 
 
@@ -1745,47 +1268,29 @@ const experience =
    BLOCKQUOTE
    ========================================================= */
 
-.historical-entry-body
-  :global(blockquote) {
+.historical-entry-body :global(blockquote) {
+  max-width: 720px;
 
-  max-width:
-    720px;
-
-  margin:
-    64px 0;
+  margin: 64px 0;
 
   padding:
     12px 0 12px 30px;
 
   border-left:
     1px solid
-    rgba(
-      200,
-      161,
-      90,
-      0.42
-    );
+    rgba(200, 161, 90, 0.42);
 
   color:
-    rgba(
-      232,
-      227,
-      216,
-      0.58
-    );
+    rgba(232, 227, 216, 0.58);
 
   font-family:
     var(--aion-font-scripture);
 
-  font-size:
-    1.08em;
+  font-size: 1.08em;
 
-  font-style:
-    italic;
+  font-style: italic;
 
-  line-height:
-    1.8;
-
+  line-height: 1.8;
 }
 
 
@@ -1793,33 +1298,19 @@ const experience =
    IMAGES
    ========================================================= */
 
-.historical-entry-body
-  :global(img) {
+.historical-entry-body :global(img) {
+  display: block;
 
-  display:
-    block;
+  width: 100%;
+  height: auto;
 
-  width:
-    100%;
-
-  height:
-    auto;
-
-  margin:
-    72px 0;
+  margin: 72px 0;
 
   border:
     1px solid
-    rgba(
-      200,
-      161,
-      90,
-      0.12
-    );
+    rgba(200, 161, 90, 0.12);
 
-  opacity:
-    0.92;
-
+  opacity: 0.92;
 }
 
 
@@ -1827,41 +1318,24 @@ const experience =
    FIGURES
    ========================================================= */
 
-.historical-entry-body
-  :global(figure) {
-
-  margin:
-    72px 0;
-
+.historical-entry-body :global(figure) {
+  margin: 72px 0;
 }
 
-
-.historical-entry-body
-  :global(figcaption) {
-
-  margin-top:
-    14px;
+.historical-entry-body :global(figcaption) {
+  margin-top: 14px;
 
   color:
-    rgba(
-      232,
-      227,
-      216,
-      0.40
-    );
+    rgba(232, 227, 216, 0.40);
 
   font-family:
     var(--aion-font-ui);
 
-  font-size:
-    10px;
+  font-size: 10px;
 
-  line-height:
-    1.6;
+  line-height: 1.6;
 
-  letter-spacing:
-    0.05em;
-
+  letter-spacing: 0.05em;
 }
 
 
@@ -1869,34 +1343,21 @@ const experience =
    HORIZONTAL RULE
    ========================================================= */
 
-.historical-entry-body
-  :global(hr) {
+.historical-entry-body :global(hr) {
+  width: 100%;
+  height: 1px;
 
-  width:
-    100%;
+  margin: 100px 0;
 
-  height:
-    1px;
-
-  margin:
-    100px 0;
-
-  border:
-    0;
+  border: 0;
 
   background:
     linear-gradient(
       90deg,
       transparent,
-      rgba(
-        200,
-        161,
-        90,
-        0.20
-      ),
+      rgba(200, 161, 90, 0.20),
       transparent
     );
-
 }
 
 
@@ -1904,34 +1365,260 @@ const experience =
    CODE
    ========================================================= */
 
-.historical-entry-body
-  :global(code) {
-
-  padding:
-    2px 6px;
+.historical-entry-body :global(code) {
+  padding: 2px 6px;
 
   background:
-    rgba(
-      255,
-      255,
-      255,
-      0.035
-    );
+    rgba(255, 255, 255, 0.035);
 
   color:
-    rgba(
-      232,
-      227,
-      216,
-      0.78
-    );
+    rgba(232, 227, 216, 0.78);
 
   font-family:
     monospace;
 
-  font-size:
-    0.88em;
+  font-size: 0.88em;
+}
 
+
+/* =========================================================
+   RELATED TO STUDY
+   ========================================================= */
+
+.historical-related {
+  width: min(
+    920px,
+    calc(100% - 48px)
+  );
+
+  margin:
+    0 auto 220px;
+
+  padding-top: 100px;
+
+  border-top:
+    1px solid
+    rgba(200, 161, 90, 0.12);
+}
+
+.historical-related-header {
+  max-width: 680px;
+
+  margin-bottom: 48px;
+}
+
+.historical-related-eyebrow {
+  display: block;
+
+  margin-bottom: 16px;
+
+  color:
+    rgba(200, 161, 90, 0.58);
+
+  font-family:
+    var(--aion-font-ui);
+
+  font-size: 9px;
+  font-weight: 600;
+
+  letter-spacing: 0.20em;
+}
+
+.historical-related-title {
+  margin: 0;
+
+  color: #e8e3d8;
+
+  font-family:
+    var(--aion-font-scripture);
+
+  font-size:
+    clamp(
+      2.2rem,
+      4vw,
+      3.5rem
+    );
+
+  font-weight: 400;
+
+  line-height: 1.1;
+}
+
+.historical-related-introduction {
+  margin:
+    18px 0 0;
+
+  color:
+    rgba(232, 227, 216, 0.45);
+
+  font-family:
+    var(--aion-font-reading);
+
+  font-size: 16px;
+
+  line-height: 1.8;
+}
+
+
+/* =========================================================
+   RELATED LIST
+   ========================================================= */
+
+.historical-related-list {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 1px;
+
+  border:
+    1px solid
+    rgba(232, 227, 216, 0.08);
+
+  background:
+    rgba(232, 227, 216, 0.08);
+}
+
+
+/* =========================================================
+   RELATED ITEM
+   ========================================================= */
+
+.historical-related-item {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    80px minmax(0, 1fr) 24px;
+
+  align-items: center;
+
+  gap: 20px;
+
+  min-height: 92px;
+
+  padding:
+    20px 24px;
+
+  background:
+    rgba(8, 10, 13, 0.62);
+
+  color: #e8e3d8;
+
+  text-decoration: none;
+
+  overflow: hidden;
+
+  transition:
+    background 280ms ease,
+    padding 280ms ease;
+}
+
+.historical-related-item::before {
+  content: "";
+
+  position: absolute;
+
+  inset:
+    0 auto 0 0;
+
+  width: 2px;
+
+  background:
+    rgba(200, 161, 90, 0.72);
+
+  transform:
+    scaleY(0);
+
+  transform-origin:
+    bottom center;
+
+  transition:
+    transform 280ms ease;
+}
+
+.historical-related-item:hover {
+  padding-left: 30px;
+
+  background:
+    rgba(21, 24, 29, 0.82);
+}
+
+.historical-related-item:hover::before {
+  transform:
+    scaleY(1);
+}
+
+
+/* =========================================================
+   RELATED TYPE
+   ========================================================= */
+
+.historical-related-type {
+  color:
+    rgba(200, 161, 90, 0.62);
+
+  font-family:
+    var(--aion-font-ui);
+
+  font-size: 8px;
+  font-weight: 600;
+
+  letter-spacing: 0.15em;
+}
+
+
+/* =========================================================
+   RELATED NAME
+   ========================================================= */
+
+.historical-related-name {
+  min-width: 0;
+
+  color:
+    rgba(232, 227, 216, 0.84);
+
+  font-family:
+    var(--aion-font-reading);
+
+  font-size: 17px;
+
+  line-height: 1.35;
+}
+
+
+/* =========================================================
+   RELATED ARROW
+   ========================================================= */
+
+.historical-related-arrow {
+  color:
+    rgba(200, 161, 90, 0.58);
+
+  font-family:
+    var(--aion-font-ui);
+
+  font-size: 16px;
+
+  text-align: right;
+
+  transition:
+    transform 280ms ease,
+    color 280ms ease;
+}
+
+.historical-related-item:hover
+.historical-related-arrow {
+  transform:
+    translateX(5px);
+
+  color:
+    #e8e3d8;
 }
 
 
@@ -1942,28 +1629,20 @@ const experience =
 @media (max-width: 700px) {
 
   .historical-entry-header {
-
     width:
       calc(100% - 40px);
 
     padding:
       80px 0;
-
   }
-
 
   .historical-back {
-
-    margin-bottom:
-      48px;
-
+    margin-bottom: 48px;
   }
-
 
   .historical-entry-header h1,
   .historical-title-shadow,
   .historical-title-highlight {
-
     font-size:
       clamp(
         3.1rem,
@@ -1971,98 +1650,102 @@ const experience =
         5.5rem
       );
 
-    line-height:
-      0.90;
-
+    line-height: 0.90;
   }
 
-
   .historical-entry[data-typography="archival"]
-    .historical-entry-header h1 {
-
+  .historical-entry-header h1 {
     font-size:
       clamp(
         2.2rem,
         11vw,
         3.6rem
       );
-
   }
-
 
   .historical-subtitle {
-
-    font-size:
-      1.15rem;
-
+    font-size: 1.15rem;
   }
-
 
   .historical-summary {
-
-    font-size:
-      16px;
-
+    font-size: 16px;
   }
 
-
   .historical-entry-body {
-
     width:
       calc(100% - 40px);
 
-    font-size:
-      17px;
+    font-size: 17px;
 
-    line-height:
-      1.85;
+    line-height: 1.85;
 
     padding-bottom:
-      140px;
-
+      120px;
   }
 
-
   .historical-entry-body
-    :global(.historical-section) {
-
+  :global(.historical-section) {
     margin:
       110px 0;
-
   }
 
-
   .historical-entry-body
-    :global(h2) {
-
+  :global(h2) {
     font-size:
       clamp(
         2rem,
         9vw,
         2.8rem
       );
-
   }
-
 
   .historical-entry-body
-    :global(
-      .historical-section > p:first-of-type::first-letter
-    ) {
-
-    font-size:
-      3em;
-
+  :global(
+    .historical-section > p:first-of-type::first-letter
+  ) {
+    font-size: 3em;
   }
-
 
   .historical-header-rule {
-
-    margin-top:
-      64px;
-
+    margin-top: 64px;
   }
 
+
+  /* Related */
+
+  .historical-related {
+    width:
+      calc(100% - 40px);
+
+    margin-bottom: 140px;
+
+    padding-top: 72px;
+  }
+
+  .historical-related-list {
+    grid-template-columns:
+      1fr;
+  }
+
+  .historical-related-item {
+    grid-template-columns:
+      68px minmax(0, 1fr) 20px;
+
+    gap: 12px;
+
+    min-height: 82px;
+
+    padding:
+      18px;
+  }
+
+  .historical-related-item:hover {
+    padding-left: 22px;
+  }
+
+  .historical-related-name {
+    font-size: 16px;
+  }
 }
 
 
@@ -2070,36 +1753,29 @@ const experience =
    REDUCED MOTION
    ========================================================= */
 
-@media (
-  prefers-reduced-motion: reduce
-) {
+@media (prefers-reduced-motion: reduce) {
 
   .historical-entry-body
-    :global(.historical-section) {
-
-    opacity:
-      1 !important;
-
-    transform:
-      none !important;
-
+  :global(.historical-section) {
+    opacity: 1 !important;
+    transform: none !important;
   }
-
 
   .historical-entry-header h1 {
-
-    filter:
-      none !important;
-
+    filter: none !important;
   }
 
+  .historical-related-item,
+  .historical-related-arrow,
+  .historical-related-item::before {
+    transition: none !important;
+  }
 }
 
 </style>
 
 
 <script>
-
   import gsap from "gsap";
 
   import {
@@ -2118,12 +1794,6 @@ const experience =
 
   /* =====================================================
      TITLE MOTION CONFIG
-     =====================================================
-
-     One entry per HistoricalTitleMotion value. Adding
-     a new motion to the type only ever means adding a
-     row here — the intro timeline below just reads
-     off whichever config matches `data-title-motion`.
      ===================================================== */
 
   const TITLE_MOTION_CONFIG: Record<
@@ -2212,17 +1882,11 @@ const experience =
       highlightFinalOpacity: 0,
       showLight: false,
     },
-
   };
 
 
   /* =====================================================
      INTERACTION CONFIG
-     =====================================================
-
-     One entry per HistoricalInteraction value. Controls
-     both the pointer-tilt "relief" loop and the anime.js
-     hover micro-interaction.
      ===================================================== */
 
   const INTERACTION_CONFIG: Record<
@@ -2262,7 +1926,6 @@ const experience =
       hoverScale: 1,
       highlightHoverOpacity: 0,
     },
-
   };
 
 
@@ -2275,12 +1938,10 @@ const experience =
       ".historical-entry"
     );
 
-
   const header =
     document.querySelector<HTMLElement>(
       "[data-entry-header]"
     );
-
 
   const body =
     document.querySelector<HTMLElement>(
@@ -2289,8 +1950,7 @@ const experience =
 
 
   /*
-   * Stop safely if this isn't
-   * an historical article page.
+   * Stop safely if this isn't an historical article page.
    */
 
   if (
@@ -2298,7 +1958,6 @@ const experience =
     header &&
     body
   ) {
-
 
     /* ===================================================
        MOTION PREFERENCE
@@ -2318,16 +1977,13 @@ const experience =
       entry.dataset.titleMotion ??
       "plain";
 
-
     const motion =
       TITLE_MOTION_CONFIG[titleMotion] ??
       TITLE_MOTION_CONFIG.plain;
 
-
     const interaction =
       entry.dataset.interaction ??
       "none";
-
 
     const pointer =
       INTERACTION_CONFIG[interaction] ??
@@ -2343,30 +1999,25 @@ const experience =
         "[data-entry-title]"
       );
 
-
     const titleShadow =
       header.querySelector<HTMLElement>(
         ".historical-title-shadow"
       );
-
 
     const titleHighlight =
       header.querySelector<HTMLElement>(
         ".historical-title-highlight"
       );
 
-
     const titleLight =
       header.querySelector<HTMLElement>(
         ".historical-title-light"
       );
 
-
     const titleWrap =
       header.querySelector<HTMLElement>(
         "[data-entry-title-wrap]"
       );
-
 
     const headerElements =
       Array.from(
@@ -2374,7 +2025,6 @@ const experience =
           "[data-entry-element]"
         )
       );
-
 
     const headerRule =
       header.querySelector<HTMLElement>(
@@ -2388,11 +2038,6 @@ const experience =
 
     if (!reducedMotion) {
 
-
-      /* -------------------------------------------------
-         Supporting elements
-         ------------------------------------------------- */
-
       gsap.set(
         headerElements,
         {
@@ -2402,13 +2047,7 @@ const experience =
       );
 
 
-      /* -------------------------------------------------
-         Main title — initial state comes straight
-         from TITLE_MOTION_CONFIG.
-         ------------------------------------------------- */
-
       if (title) {
-
         gsap.set(
           title,
           {
@@ -2420,16 +2059,10 @@ const experience =
               motion.initialLetterSpacing,
           }
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Shadow
-         ------------------------------------------------- */
-
       if (titleShadow) {
-
         gsap.set(
           titleShadow,
           {
@@ -2437,16 +2070,10 @@ const experience =
             y: motion.shadowInitialY,
           }
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Highlight
-         ------------------------------------------------- */
-
       if (titleHighlight) {
-
         gsap.set(
           titleHighlight,
           {
@@ -2454,32 +2081,20 @@ const experience =
             y: motion.highlightInitialY,
           }
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Title light
-         ------------------------------------------------- */
-
       if (titleLight) {
-
         gsap.set(
           titleLight,
           {
             opacity: 0,
           }
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Header divider
-         ------------------------------------------------- */
-
       if (headerRule) {
-
         gsap.set(
           headerRule,
           {
@@ -2488,7 +2103,6 @@ const experience =
               "left center",
           }
         );
-
       }
 
 
@@ -2498,18 +2112,12 @@ const experience =
 
       const intro =
         gsap.timeline({
-
           defaults: {
             ease:
               "power3.out",
           },
-
         });
 
-
-      /* -------------------------------------------------
-         Metadata
-         ------------------------------------------------- */
 
       intro.to(
         headerElements,
@@ -2522,101 +2130,62 @@ const experience =
       );
 
 
-      /* -------------------------------------------------
-         Shadow
-         ------------------------------------------------- */
-
       if (titleShadow) {
-
         intro.to(
           titleShadow,
           {
             opacity:
               motion.shadowFinalOpacity,
-
             y: 0,
-
             duration:
               motion.duration,
-
             ease:
               "power3.out",
-
           },
           "-=0.35"
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Main title
-         ------------------------------------------------- */
-
       if (title) {
-
         intro.to(
           title,
           {
-
             opacity: 1,
-
             y: 0,
-
             filter:
               "blur(0px)",
-
             letterSpacing:
               motion.finalLetterSpacing,
-
             duration:
               motion.duration,
-
             ease:
               motion.ease,
-
           },
-
-          `-=${Math.min(motion.duration * 0.7, 1.05)}`
-
+          `-=${Math.min(
+            motion.duration * 0.7,
+            1.05
+          )}`
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Highlight
-         ------------------------------------------------- */
-
       if (titleHighlight) {
-
         intro.to(
           titleHighlight,
           {
-
             opacity:
               motion.highlightFinalOpacity,
-
             y: 0,
-
             duration:
               motion.duration * 0.75,
-
             ease:
               "power2.out",
-
           },
-
           "-=0.9"
         );
-
       }
 
-
-      /* -------------------------------------------------
-         Archival print light sweep
-         (only for motions that opt in via `showLight`)
-         ------------------------------------------------- */
 
       if (
         titleLight &&
@@ -2632,7 +2201,6 @@ const experience =
           "-=0.25"
         );
 
-
         intro.to(
           titleLight,
           {
@@ -2643,24 +2211,19 @@ const experience =
               "power2.inOut",
           }
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Supporting information
-         ------------------------------------------------- */
-
       const supporting =
         header.querySelectorAll(
-          ".historical-subtitle, .historical-summary, .historical-tags"
+          ".historical-subtitle, " +
+          ".historical-summary, " +
+          ".historical-tags"
         );
-
 
       if (
         supporting.length > 0
       ) {
-
         intro.to(
           supporting,
           {
@@ -2671,16 +2234,10 @@ const experience =
           },
           "-=0.65"
         );
-
       }
 
 
-      /* -------------------------------------------------
-         Divider
-         ------------------------------------------------- */
-
       if (headerRule) {
-
         intro.to(
           headerRule,
           {
@@ -2691,32 +2248,28 @@ const experience =
           },
           "-=0.55"
         );
-
       }
-
     }
 
 
     /* ===================================================
        TITLE POINTER INTERACTION
-       Driven by `data-interaction` — "none" disables
-       this loop entirely (also respects reduced motion).
        =================================================== */
 
     if (
       titleWrap &&
       title &&
       !reducedMotion &&
-      (pointer.tiltX > 0 || pointer.tiltY > 0)
+      (
+        pointer.tiltX > 0 ||
+        pointer.tiltY > 0
+      )
     ) {
 
-
       let targetX = 0;
-
       let targetY = 0;
 
       let currentX = 0;
-
       let currentY = 0;
 
 
@@ -2727,14 +2280,12 @@ const experience =
           const rect =
             titleWrap.getBoundingClientRect();
 
-
           const x =
             (
               event.clientX -
               rect.left
             ) /
             rect.width;
-
 
           const y =
             (
@@ -2743,14 +2294,13 @@ const experience =
             ) /
             rect.height;
 
-
           targetX =
-            (x - 0.5) * pointer.tiltX;
-
+            (x - 0.5) *
+            pointer.tiltX;
 
           targetY =
-            (y - 0.5) * pointer.tiltY;
-
+            (y - 0.5) *
+            pointer.tiltY;
         }
       );
 
@@ -2758,11 +2308,8 @@ const experience =
       titleWrap.addEventListener(
         "pointerleave",
         () => {
-
           targetX = 0;
-
           targetY = 0;
-
         }
       );
 
@@ -2776,7 +2323,6 @@ const experience =
               currentX
             ) * 0.08;
 
-
           currentY +=
             (
               targetY -
@@ -2787,70 +2333,50 @@ const experience =
           gsap.set(
             title,
             {
-              x:
-                currentX,
-
-              y:
-                currentY,
+              x: currentX,
+              y: currentY,
             }
           );
 
 
-          if (
-            titleHighlight
-          ) {
-
+          if (titleHighlight) {
             gsap.set(
               titleHighlight,
               {
                 x:
-                  currentX *
-                  0.35,
-
+                  currentX * 0.35,
                 y:
-                  currentY *
-                  0.35,
+                  currentY * 0.35,
               }
             );
-
           }
 
 
-          if (
-            titleShadow
-          ) {
-
+          if (titleShadow) {
             gsap.set(
               titleShadow,
               {
                 x:
-                  currentX *
-                  -0.18,
-
+                  currentX * -0.18,
                 y:
-                  currentY *
-                  -0.18,
+                  currentY * -0.18,
               }
             );
-
           }
 
 
           requestAnimationFrame(
             updateRelief
           );
-
         };
 
 
       updateRelief();
-
     }
 
 
     /* ===================================================
        ANIME.JS MICRO INTERACTION
-       Skipped entirely for interaction "none".
        =================================================== */
 
     if (
@@ -2858,7 +2384,6 @@ const experience =
       !reducedMotion &&
       interaction !== "none"
     ) {
-
 
       titleWrap.addEventListener(
         "pointerenter",
@@ -2871,58 +2396,31 @@ const experience =
               {
                 scale:
                   pointer.hoverScale,
-
-                duration:
-                  500,
-
-                ease:
-                  "out(3)",
+                duration: 500,
+                ease: "out(3)",
               }
             );
 
 
-            if (
-              titleHighlight
-            ) {
-
+            if (titleHighlight) {
               animeAnimate(
                 titleHighlight,
                 {
-
                   opacity:
                     pointer.highlightHoverOpacity,
-
-                  duration:
-                    500,
-
-                  ease:
-                    "out(3)",
-
+                  duration: 500,
+                  ease: "out(3)",
                 }
               );
-
             }
 
-          }
-          catch (
-            error
-          ) {
-
-            /*
-             * Anime.js is only a
-             * micro-interaction layer.
-             *
-             * Never allow it to
-             * break GSAP.
-             */
+          } catch (error) {
 
             console.warn(
               "AION: Anime.js interaction failed.",
               error
             );
-
           }
-
         }
       );
 
@@ -2937,601 +2435,246 @@ const experience =
               titleWrap,
               {
                 scale: 1,
-                duration:
-                  700,
-                ease:
-                  "out(3)",
+                duration: 700,
+                ease: "out(3)",
               }
             );
 
 
-            if (
-              titleHighlight
-            ) {
-
+            if (titleHighlight) {
               animeAnimate(
                 titleHighlight,
                 {
-
                   opacity:
                     motion.highlightFinalOpacity,
-
-                  duration:
-                    700,
-
-                  ease:
-                    "out(3)",
-
+                  duration: 700,
+                  ease: "out(3)",
                 }
               );
-
             }
 
-          }
-          catch (
-            error
-          ) {
+          } catch (error) {
 
             console.warn(
-              "AION: Anime.js interaction failed.",
+              "AION: Anime.js interaction reset failed.",
               error
             );
-
           }
-
         }
       );
-
     }
 
 
     /* ===================================================
-       MARKDOWN HEADINGS
+       MARKDOWN SECTION SCROLL ANIMATION
        =================================================== */
 
     const headings =
       Array.from(
         body.querySelectorAll<HTMLElement>(
-          ":scope > h2"
+          ":scope > .historical-section > h2, " +
+          ":scope h2"
         )
       );
 
 
-    /* ===================================================
-       SECTION CREATION
-       =================================================== */
+    /*
+     * Older Markdown content may not have
+     * `.historical-section` wrappers.
+     *
+     * In that case we simply animate headings
+     * directly.
+     */
 
     if (
+      !reducedMotion &&
       headings.length > 0
     ) {
-
 
       headings.forEach(
         (heading) => {
 
           const section =
-            document.createElement(
-              "section"
+            heading.closest<HTMLElement>(
+              ".historical-section"
             );
 
-
-          section.className =
-            "historical-section";
-
-
-          section.dataset.sectionState =
-            "future";
-
-
-          body.insertBefore(
-            section,
-            heading
-          );
-
-
-          section.appendChild(
-            heading
-          );
-
-
-          let next =
-            section.nextElementSibling;
-
-
-          while (
-            next &&
-            next.tagName !== "H2"
-          ) {
-
-            const current =
-              next;
-
-
-            next =
-              next.nextElementSibling;
-
-
-            section.appendChild(
-              current
-            );
-
+          if (!section) {
+            return;
           }
-
-        }
-      );
-
-
-      /* =================================================
-         SECTIONS
-         ================================================= */
-
-      const sections =
-        Array.from(
-          body.querySelectorAll<HTMLElement>(
-            ".historical-section"
-          )
-        );
-
-
-      /* =================================================
-         INITIAL SECTION STATE
-         ================================================= */
-
-      sections.forEach(
-        (section) => {
-
-          const heading =
-            section.querySelector<HTMLElement>(
-              "h2"
-            );
-
 
           const content =
             Array.from(
               section.children
             ).filter(
-              (element) =>
-                element !== heading
-            ) as HTMLElement[];
-
-
-          if (
-            reducedMotion
-          ) {
-
-            gsap.set(
-              section,
-              {
-                opacity: 1,
-                y: 0,
-              }
+              (child) =>
+                child !== heading
             );
 
 
-            if (
-              heading
-            ) {
+          gsap.set(
+            heading,
+            {
+              opacity: 0,
+              y: 35,
+              filter:
+                "blur(3px)",
+            }
+          );
 
-              gsap.set(
+
+          if (content.length > 0) {
+            gsap.set(
+              content,
+              {
+                opacity: 0,
+                y: 24,
+              }
+            );
+          }
+
+
+          ScrollTrigger.create({
+            trigger: section,
+            start: "top 78%",
+            once: true,
+
+            onEnter: () => {
+
+              const sectionTimeline =
+                gsap.timeline();
+
+              sectionTimeline.to(
                 heading,
                 {
                   opacity: 1,
                   y: 0,
                   filter:
-                    "none",
-                  clipPath:
-                    "inset(0 0% 0 0)",
+                    "blur(0px)",
+                  duration: 1.0,
+                  ease:
+                    "power3.out",
                 }
               );
 
-            }
 
-
-            gsap.set(
-              content,
-              {
-                opacity: 1,
-                y: 0,
+              if (content.length > 0) {
+                sectionTimeline.to(
+                  content,
+                  {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.8,
+                    stagger: 0.06,
+                    ease:
+                      "power2.out",
+                  },
+                  "-=0.55"
+                );
               }
-            );
-
-
-            return;
-
-          }
-
-
-          /*
-           * Everything starts slightly
-           * below and faded.
-           */
-
-          gsap.set(
-            section,
-            {
-              opacity: 0.42,
-              y: 38,
-            }
-          );
-
-
-          if (
-            heading
-          ) {
-
-            gsap.set(
-              heading,
-              {
-                opacity: 0.32,
-                y: 24,
-                filter:
-                  "blur(1.5px)",
-                clipPath:
-                  "inset(0 100% 0 0)",
-              }
-            );
-
-          }
-
-
-          gsap.set(
-            content,
-            {
-              opacity: 0.22,
-              y: 16,
-            }
-          );
-
+            },
+          });
         }
       );
-
-
-      /* =================================================
-         SCROLL EXPERIENCE
-         ================================================= */
-
-      if (
-        !reducedMotion
-      ) {
-
-
-        sections.forEach(
-          (section) => {
-
-            const heading =
-              section.querySelector<HTMLElement>(
-                "h2"
-              );
-
-
-            const content =
-              Array.from(
-                section.children
-              ).filter(
-                (element) =>
-                  element !== heading
-              ) as HTMLElement[];
-
-
-            /*
-             * One timeline controls the
-             * ENTIRE life of the section.
-             *
-             * This avoids multiple
-             * ScrollTriggers fighting
-             * over the same properties.
-             */
-
-            const timeline =
-              gsap.timeline({
-
-                scrollTrigger: {
-
-                  trigger:
-                    section,
-
-                  start:
-                    "top 86%",
-
-                  end:
-                    "bottom 18%",
-
-                  scrub:
-                    1,
-
-                  invalidateOnRefresh:
-                    true,
-
-                },
-
-              });
-
-
-            /* ---------------------------------------------
-               FUTURE → PRESENT
-               --------------------------------------------- */
-
-            timeline.to(
-              section,
-              {
-
-                opacity: 1,
-
-                y: 0,
-
-                duration:
-                  0.28,
-
-                ease:
-                  "none",
-
-              }
-            );
-
-
-            if (
-              heading
-            ) {
-
-              timeline.to(
-                heading,
-                {
-
-                  opacity: 1,
-
-                  y: 0,
-
-                  filter:
-                    "blur(0px)",
-
-                  clipPath:
-                    "inset(0 0% 0 0)",
-
-                  duration:
-                    0.28,
-
-                  ease:
-                    "none",
-
-                },
-
-                "<"
-
-              );
-
-            }
-
-
-            timeline.to(
-              content,
-              {
-
-                opacity: 1,
-
-                y: 0,
-
-                duration:
-                  0.28,
-
-                ease:
-                  "none",
-
-              },
-
-              "<0.04"
-
-            );
-
-
-            /* ---------------------------------------------
-               PRESENT
-               --------------------------------------------- */
-
-            timeline.to(
-              section,
-              {
-
-                opacity: 1,
-
-                y: 0,
-
-                duration:
-                  0.34,
-
-                ease:
-                  "none",
-
-              }
-            );
-
-
-            /* ---------------------------------------------
-               PRESENT → PAST
-               --------------------------------------------- */
-
-            timeline.to(
-              section,
-              {
-
-                opacity:
-                  0.56,
-
-                y:
-                  -32,
-
-                duration:
-                  0.38,
-
-                ease:
-                  "none",
-
-              }
-            );
-
-
-            if (
-              heading
-            ) {
-
-              timeline.to(
-                heading,
-                {
-
-                  opacity:
-                    0.58,
-
-                  y:
-                    -24,
-
-                  filter:
-                    "blur(0.5px)",
-
-                  duration:
-                    0.38,
-
-                  ease:
-                    "none",
-
-                },
-
-                "<"
-
-              );
-
-            }
-
-
-            timeline.to(
-              content,
-              {
-
-                opacity:
-                  0.52,
-
-                y:
-                  -14,
-
-                duration:
-                  0.38,
-
-                ease:
-                  "none",
-
-              },
-
-              "<"
-
-            );
-
-
-            /*
-             * Section state is used only
-             * as semantic information.
-             */
-
-            ScrollTrigger.create({
-
-              trigger:
-                section,
-
-              start:
-                "top 60%",
-
-              end:
-                "bottom 40%",
-
-              onEnter:
-                () => {
-
-                  section.dataset.sectionState =
-                    "current";
-
-                },
-
-              onEnterBack:
-                () => {
-
-                  section.dataset.sectionState =
-                    "current";
-
-                },
-
-              onLeave:
-                () => {
-
-                  section.dataset.sectionState =
-                    "past";
-
-                },
-
-              onLeaveBack:
-                () => {
-
-                  section.dataset.sectionState =
-                    "future";
-
-                },
-
-            });
-
-          }
-        );
-
-      }
-
-
-      /* =================================================
-         REFRESH
-         ================================================= */
-
-      requestAnimationFrame(
-        () => {
-
-          ScrollTrigger.refresh();
-
-        }
-      );
-
-
-      window.addEventListener(
-        "load",
-        () => {
-
-          ScrollTrigger.refresh();
-
-        },
-        {
-          once: true,
-        }
-      );
-
-
-      /* =================================================
-         ASTRO VIEW TRANSITIONS
-         ================================================= */
-
-      document.addEventListener(
-        "astro:before-swap",
-        () => {
-
-          ScrollTrigger
-            .getAll()
-            .forEach(
-              (trigger) => {
-
-                trigger.kill();
-
-              }
-            );
-
-        },
-        {
-          once: true,
-        }
-      );
-
     }
 
-  }
 
+    /* ===================================================
+       RELATED ITEMS
+       =================================================== */
+
+    const relatedItems =
+      Array.from(
+        document.querySelectorAll<HTMLElement>(
+          "[data-related-item]"
+        )
+      );
+
+
+    if (
+      !reducedMotion &&
+      relatedItems.length > 0
+    ) {
+
+      gsap.set(
+        relatedItems,
+        {
+          opacity: 0,
+          y: 18,
+        }
+      );
+
+
+      ScrollTrigger.create({
+        trigger:
+          "[data-related-section]",
+
+        start:
+          "top 82%",
+
+        once: true,
+
+        onEnter: () => {
+
+          gsap.to(
+            relatedItems,
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.7,
+              stagger: 0.06,
+              ease:
+                "power2.out",
+            }
+          );
+        },
+      });
+    }
+
+
+    /* ===================================================
+       REFRESH
+       =================================================== */
+
+    requestAnimationFrame(
+      () => {
+        ScrollTrigger.refresh();
+      }
+    );
+
+
+    window.addEventListener(
+      "load",
+      () => {
+        ScrollTrigger.refresh();
+      },
+      {
+        once: true,
+      }
+    );
+
+
+    /* ===================================================
+       ASTRO VIEW TRANSITIONS
+       =================================================== */
+
+    document.addEventListener(
+      "astro:before-swap",
+      () => {
+
+        ScrollTrigger
+          .getAll()
+          .forEach(
+            (trigger) => {
+              trigger.kill();
+            }
+          );
+
+      },
+      {
+        once: true,
+      }
+    );
+
+  }
 </script>

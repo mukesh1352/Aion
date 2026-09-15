@@ -1,0 +1,662 @@
+---
+import type { ResolvedReference } from "../../lib/knowledge/resolver";
+
+interface Props {
+  references: ResolvedReference[];
+}
+
+const { references } = Astro.props;
+
+/*
+ * Keep the component defensive:
+ * - only resolved references
+ * - only references with valid routes
+ * - one item per entity
+ *
+ * The page already performs this filtering, but keeping this
+ * small guard here makes the component safe to reuse elsewhere.
+ */
+const uniqueReferences = Array.from(
+  new Map(
+    references
+      .filter(
+        (reference) =>
+          reference.resolved &&
+          reference.href !== null,
+      )
+      .map(
+        (reference) => [
+          reference.entityId,
+          reference,
+        ],
+      ),
+  ).values(),
+);
+
+/*
+ * Human-readable labels for the current entity types.
+ *
+ * The underlying type remains unchanged in data-entity-type,
+ * so future styling/filtering can still use the machine value.
+ */
+const typeLabels: Record<string, string> = {
+  overview: "Overview",
+  person: "Person",
+  event: "Event",
+  place: "Place",
+  story: "Story",
+  fact: "Fact",
+};
+---
+
+{
+  uniqueReferences.length > 0 && (
+    <section
+      class="related-entities"
+      aria-labelledby="related-entities-title"
+      data-related-entities
+    >
+
+      <!-- =================================================
+           HEADER
+           ================================================= -->
+
+      <div class="related-entities-header">
+
+        <span class="related-entities-eyebrow">
+          CONTINUE EXPLORING
+        </span>
+
+        <h2
+          id="related-entities-title"
+          class="related-entities-title"
+        >
+          Related to Study
+        </h2>
+
+        <p class="related-entities-description">
+          Explore people, places, events, stories, and
+          other subjects mentioned in this history.
+        </p>
+
+      </div>
+
+
+      <!-- =================================================
+           ENTITY GRID
+           ================================================= -->
+
+      <div
+        class="related-entities-grid"
+        role="list"
+      >
+
+        {
+          uniqueReferences.map(
+            (reference) => (
+              <div
+                class="related-entity"
+                role="listitem"
+              >
+
+                <a
+                  href={reference.href!}
+                  class="related-entity-link"
+                  data-entity-type={reference.type}
+                  data-entity-id={reference.entityId}
+                  aria-label={`Explore ${reference.title}`}
+                >
+
+                  <!-- Type -->
+
+                  <span
+                    class="related-entity-type"
+                  >
+                    {
+                      typeLabels[
+                        reference.type
+                      ] ??
+                      reference.type
+                    }
+                  </span>
+
+
+                  <!-- Title -->
+
+                  <span
+                    class="related-entity-title"
+                  >
+                    {reference.title}
+                  </span>
+
+
+                  <!-- Arrow -->
+
+                  <span
+                    class="related-entity-arrow"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+
+                </a>
+
+              </div>
+            ),
+          )
+        }
+
+      </div>
+
+    </section>
+  )
+}
+
+
+<style>
+  /* =======================================================
+     CONTAINER
+     ======================================================= */
+
+  .related-entities {
+    width: 100%;
+
+    margin-top: 7rem;
+    padding-top: 4rem;
+
+    border-top:
+      1px solid
+      rgba(232, 227, 216, 0.14);
+  }
+
+
+  /* =======================================================
+     HEADER
+     ======================================================= */
+
+  .related-entities-header {
+    max-width: 720px;
+
+    margin-bottom: 2.8rem;
+  }
+
+
+  .related-entities-eyebrow {
+    display: block;
+
+    margin-bottom: 0.9rem;
+
+    color:
+      rgba(200, 161, 90, 0.72);
+
+    font-family:
+      var(--aion-font-ui,
+      system-ui,
+      sans-serif);
+
+    font-size: 0.62rem;
+    font-weight: 600;
+
+    letter-spacing: 0.20em;
+
+    text-transform: uppercase;
+  }
+
+
+  .related-entities-title {
+    margin: 0;
+
+    color: #e8e3d8;
+
+    font-family:
+      var(
+        --aion-font-scripture,
+        Georgia,
+        serif
+      );
+
+    font-size:
+      clamp(
+        2rem,
+        4vw,
+        3rem
+      );
+
+    font-weight: 400;
+
+    line-height: 1.1;
+
+    letter-spacing: -0.015em;
+  }
+
+
+  .related-entities-description {
+    max-width: 620px;
+
+    margin:
+      1rem 0 0;
+
+    color:
+      rgba(232, 227, 216, 0.48);
+
+    font-family:
+      var(
+        --aion-font-reading,
+        Georgia,
+        serif
+      );
+
+    font-size: 0.98rem;
+
+    line-height: 1.8;
+  }
+
+
+  /* =======================================================
+     GRID
+     ======================================================= */
+
+  .related-entities-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 1px;
+
+    overflow: hidden;
+
+    border:
+      1px solid
+      rgba(232, 227, 216, 0.09);
+
+    background:
+      rgba(232, 227, 216, 0.09);
+  }
+
+
+  /* =======================================================
+     ENTITY
+     ======================================================= */
+
+  .related-entity {
+    min-width: 0;
+  }
+
+
+  /* =======================================================
+     LINK
+     ======================================================= */
+
+  .related-entity-link {
+    position: relative;
+
+    display: flex;
+
+    min-height: 112px;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    padding:
+      1.45rem
+      4rem
+      1.45rem
+      1.5rem;
+
+    overflow: hidden;
+
+    background:
+      rgba(21, 24, 29, 0.76);
+
+    color: #e8e3d8;
+
+    text-decoration: none;
+
+    transition:
+      background 280ms ease,
+      padding 280ms ease;
+  }
+
+
+  /* =======================================================
+     LEFT ACCENT
+     ======================================================= */
+
+  .related-entity-link::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+    left: 0;
+
+    width: 2px;
+
+    background:
+      rgba(200, 161, 90, 0.78);
+
+    transform:
+      scaleY(0);
+
+    transform-origin:
+      bottom center;
+
+    transition:
+      transform 320ms ease;
+  }
+
+
+  /* =======================================================
+     TOP SHEEN
+     ======================================================= */
+
+  .related-entity-link::after {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: -100%;
+
+    width: 70%;
+    height: 100%;
+
+    background:
+      linear-gradient(
+        90deg,
+        transparent,
+        rgba(232, 227, 216, 0.045),
+        transparent
+      );
+
+    transform:
+      skewX(-18deg);
+
+    pointer-events: none;
+
+    transition:
+      left 650ms ease;
+  }
+
+
+  /* =======================================================
+     HOVER
+     ======================================================= */
+
+  .related-entity-link:hover,
+  .related-entity-link:focus-visible {
+    padding-left:
+      1.85rem;
+
+    background:
+      rgba(200, 161, 90, 0.055);
+  }
+
+
+  .related-entity-link:hover::before,
+  .related-entity-link:focus-visible::before {
+    transform:
+      scaleY(1);
+  }
+
+
+  .related-entity-link:hover::after,
+  .related-entity-link:focus-visible::after {
+    left: 140%;
+  }
+
+
+  /* =======================================================
+     FOCUS
+     ======================================================= */
+
+  .related-entity-link:focus-visible {
+    outline:
+      1px solid
+      rgba(200, 161, 90, 0.65);
+
+    outline-offset:
+      -1px;
+  }
+
+
+  /* =======================================================
+     TYPE
+     ======================================================= */
+
+  .related-entity-type {
+    display: block;
+
+    margin-bottom: 0.5rem;
+
+    color:
+      rgba(200, 161, 90, 0.62);
+
+    font-family:
+      var(
+        --aion-font-ui,
+        system-ui,
+        sans-serif
+      );
+
+    font-size: 0.58rem;
+
+    font-weight: 600;
+
+    letter-spacing: 0.15em;
+
+    line-height: 1;
+
+    text-transform: uppercase;
+  }
+
+
+  /* =======================================================
+     TITLE
+     ======================================================= */
+
+  .related-entity-title {
+    display: block;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    color:
+      rgba(232, 227, 216, 0.88);
+
+    font-family:
+      var(
+        --aion-font-reading,
+        Georgia,
+        serif
+      );
+
+    font-size: 1.05rem;
+
+    line-height: 1.35;
+
+    text-overflow: ellipsis;
+
+    transition:
+      color 240ms ease;
+  }
+
+
+  .related-entity-link:hover
+  .related-entity-title,
+  .related-entity-link:focus-visible
+  .related-entity-title {
+    color: #e8e3d8;
+  }
+
+
+  /* =======================================================
+     ARROW
+     ======================================================= */
+
+  .related-entity-arrow {
+    position: absolute;
+
+    top: 50%;
+    right: 1.5rem;
+
+    color:
+      rgba(200, 161, 90, 0.62);
+
+    font-family:
+      var(
+        --aion-font-ui,
+        system-ui,
+        sans-serif
+      );
+
+    font-size: 1.15rem;
+
+    line-height: 1;
+
+    transform:
+      translateY(-50%);
+
+    transition:
+      transform 300ms ease,
+      color 300ms ease;
+  }
+
+
+  .related-entity-link:hover
+  .related-entity-arrow,
+  .related-entity-link:focus-visible
+  .related-entity-arrow {
+    color: #e8e3d8;
+
+    transform:
+      translate(
+        5px,
+        -50%
+      );
+  }
+
+
+  /* =======================================================
+     ENTITY-SPECIFIC DETAILS
+     ======================================================= */
+
+  .related-entity-link[data-entity-type="person"]
+  .related-entity-type {
+    color:
+      rgba(200, 161, 90, 0.72);
+  }
+
+
+  .related-entity-link[data-entity-type="place"]
+  .related-entity-type {
+    color:
+      rgba(126, 156, 185, 0.72);
+  }
+
+
+  .related-entity-link[data-entity-type="event"]
+  .related-entity-type {
+    color:
+      rgba(178, 151, 105, 0.72);
+  }
+
+
+  .related-entity-link[data-entity-type="story"]
+  .related-entity-type {
+    color:
+      rgba(170, 139, 109, 0.72);
+  }
+
+
+  .related-entity-link[data-entity-type="fact"]
+  .related-entity-type {
+    color:
+      rgba(150, 158, 164, 0.72);
+  }
+
+
+  /* =======================================================
+     MOBILE
+     ======================================================= */
+
+  @media (max-width: 700px) {
+
+    .related-entities {
+      margin-top: 5rem;
+
+      padding-top: 3rem;
+    }
+
+
+    .related-entities-header {
+      margin-bottom: 2rem;
+    }
+
+
+    .related-entities-title {
+      font-size:
+        clamp(
+          2rem,
+          10vw,
+          2.7rem
+        );
+    }
+
+
+    .related-entities-description {
+      font-size: 0.92rem;
+    }
+
+
+    .related-entities-grid {
+      grid-template-columns: 1fr;
+    }
+
+
+    .related-entity-link {
+      min-height: 96px;
+
+      padding:
+        1.25rem
+        3.5rem
+        1.25rem
+        1.25rem;
+    }
+
+
+    .related-entity-link:hover,
+    .related-entity-link:focus-visible {
+      padding-left:
+        1.5rem;
+    }
+
+
+    .related-entity-arrow {
+      right: 1.2rem;
+    }
+  }
+
+
+  /* =======================================================
+     REDUCED MOTION
+     ======================================================= */
+
+  @media (prefers-reduced-motion: reduce) {
+
+    .related-entity-link,
+    .related-entity-link::before,
+    .related-entity-link::after,
+    .related-entity-arrow,
+    .related-entity-title {
+      transition: none;
+    }
+  }
+</style>
