@@ -1,0 +1,430 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+import "./stories-gallery.css";
+
+interface Props {
+  stories: CollectionEntry<"historicalContent">[];
+}
+
+const { stories } = Astro.props;
+
+const storyData = stories
+  .filter((entry) => entry.data.type === "story")
+  .map((entry) => ({
+    id: entry.data.id,
+    title: entry.data.title,
+    subtitle: entry.data.subtitle ?? "",
+    summary: entry.data.summary,
+    status: entry.data.status,
+    image: entry.data.image ?? "",
+    imageAlt: entry.data.imageAlt ?? entry.data.title,
+    slug: entry.id,
+  }));
+---
+
+<section
+  class="stories-section"
+  data-stories-section
+>
+  <header class="stories-header">
+    <div class="stories-heading">
+      <p class="stories-eyebrow">
+        STORIES
+      </p>
+
+      <h2 class="stories-title">
+        Stories Across the Ages
+      </h2>
+    </div>
+
+    <p class="stories-introduction">
+      Explore the narratives, traditions, and remembered
+      moments that give history its human dimension.
+    </p>
+  </header>
+
+  {
+    storyData.length > 0 ? (
+      <div
+        class="stories-gallery-shell"
+        data-stories-gallery-shell
+      >
+        <div
+          class="stories-gallery"
+          data-stories-gallery
+        >
+          {storyData.map((story, index) => (
+            <article
+              class:list={[
+                "story-card",
+                index === 0 && "story-card-featured",
+                index === 1 && "story-card-secondary",
+              ]}
+              data-story-card
+              data-story-index={index}
+            >
+              <a
+                href={`/india/${story.slug}`}
+                class="story-card-link"
+                aria-label={`Explore ${story.title}`}
+              >
+                <div class="story-card-media">
+                  {
+                    story.image ? (
+                      <img
+                        src={story.image}
+                        alt={story.imageAlt}
+                        class="story-card-image"
+                        loading={
+                          index === 0
+                            ? "eager"
+                            : "lazy"
+                        }
+                        decoding="async"
+                      />
+                    ) : (
+                      <div
+                        class="story-card-placeholder"
+                        aria-hidden="true"
+                      >
+                        <span>STORY</span>
+                      </div>
+                    )
+                  }
+
+                  <div
+                    class="story-card-image-overlay"
+                    aria-hidden="true"
+                  ></div>
+
+                  <span class="story-card-number">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+
+                  <span class="story-card-status">
+                    {story.status}
+                  </span>
+                </div>
+
+                <div class="story-card-content">
+                  <p class="story-card-label">
+                    NARRATIVE
+                  </p>
+
+                  <h3 class="story-card-title">
+                    {story.title}
+                  </h3>
+
+                  {
+                    story.subtitle && (
+                      <p class="story-card-subtitle">
+                        {story.subtitle}
+                      </p>
+                    )
+                  }
+
+                  <p class="story-card-summary">
+                    {story.summary}
+                  </p>
+
+                  <span class="story-card-cta">
+                    READ STORY
+
+                    <span
+                      class="story-card-arrow"
+                      aria-hidden="true"
+                    >
+                      →
+                    </span>
+                  </span>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <div class="stories-empty">
+        <p>No stories are available for this era yet.</p>
+      </div>
+    )
+  }
+
+  <footer class="stories-footer">
+    <span class="stories-footer-line"></span>
+
+    <span class="stories-footer-count">
+      {String(storyData.length).padStart(2, "0")} STORIES
+    </span>
+
+    <span class="stories-footer-line"></span>
+  </footer>
+</section>
+
+<script>
+  import { animate, createTimeline } from "animejs";
+
+  type Cleanup = () => void;
+
+  let cleanup: Cleanup | undefined;
+
+  async function setupStories(): Promise<void> {
+    cleanup?.();
+
+    const root =
+      document.querySelector<HTMLElement>(
+        "[data-stories-section]",
+      );
+
+    if (!root) {
+      return;
+    }
+
+    const cards = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        "[data-story-card]",
+      ),
+    );
+
+    if (cards.length === 0) {
+      return;
+    }
+
+    const reducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+    /* =======================================================
+       INITIAL ANIMATION
+       ======================================================= */
+
+    if (!reducedMotion) {
+      const eyebrow =
+        root.querySelector<HTMLElement>(
+          ".stories-eyebrow",
+        );
+
+      const title =
+        root.querySelector<HTMLElement>(
+          ".stories-title",
+        );
+
+      const introduction =
+        root.querySelector<HTMLElement>(
+          ".stories-introduction",
+        );
+
+      if (
+        eyebrow &&
+        title &&
+        introduction
+      ) {
+        createTimeline({
+          defaults: {
+            ease: "outCubic",
+          },
+        })
+          .add(
+            eyebrow,
+            {
+              opacity: [0, 1],
+              translateY: [16, 0],
+              duration: 550,
+            },
+          )
+          .add(
+            title,
+            {
+              opacity: [0, 1],
+              translateY: [24, 0],
+              duration: 800,
+            },
+            "-=300",
+          )
+          .add(
+            introduction,
+            {
+              opacity: [0, 1],
+              translateY: [16, 0],
+              duration: 600,
+            },
+            "-=450",
+          )
+          .add(
+            cards,
+            {
+              opacity: [0, 1],
+              translateY: [35, 0],
+              duration: 750,
+              delay: (_, index) =>
+                (index ?? 0) * 90,
+            },
+            "-=350",
+          );
+      }
+    }
+
+    /* =======================================================
+       CARD INTERACTION
+       ======================================================= */
+
+    const cleanupHandlers: Cleanup[] = [];
+
+    cards.forEach((card) => {
+      const media =
+        card.querySelector<HTMLElement>(
+          ".story-card-media",
+        );
+
+      const image =
+        card.querySelector<HTMLElement>(
+          ".story-card-image",
+        );
+
+      const content =
+        card.querySelector<HTMLElement>(
+          ".story-card-content",
+        );
+
+      const arrow =
+        card.querySelector<HTMLElement>(
+          ".story-card-arrow",
+        );
+
+      if (!media) {
+        return;
+      }
+
+      const enter = (): void => {
+        card.classList.add("is-hovered");
+
+        if (reducedMotion) {
+          return;
+        }
+
+        if (image) {
+          animate(image, {
+            scale: 1.045,
+            duration: 650,
+            ease: "outCubic",
+          });
+        }
+
+        if (content) {
+          animate(content, {
+            translateY: -5,
+            duration: 400,
+            ease: "outCubic",
+          });
+        }
+
+        if (arrow) {
+          animate(arrow, {
+            translateX: 7,
+            duration: 350,
+            ease: "outCubic",
+          });
+        }
+      };
+
+      const leave = (): void => {
+        card.classList.remove("is-hovered");
+
+        if (reducedMotion) {
+          return;
+        }
+
+        if (image) {
+          animate(image, {
+            scale: 1,
+            duration: 700,
+            ease: "outCubic",
+          });
+        }
+
+        if (content) {
+          animate(content, {
+            translateY: 0,
+            duration: 450,
+            ease: "outCubic",
+          });
+        }
+
+        if (arrow) {
+          animate(arrow, {
+            translateX: 0,
+            duration: 400,
+            ease: "outCubic",
+          });
+        }
+      };
+
+      card.addEventListener(
+        "mouseenter",
+        enter,
+      );
+
+      card.addEventListener(
+        "mouseleave",
+        leave,
+      );
+
+      card.addEventListener(
+        "focusin",
+        enter,
+      );
+
+      card.addEventListener(
+        "focusout",
+        leave,
+      );
+
+      cleanupHandlers.push(() => {
+        card.removeEventListener(
+          "mouseenter",
+          enter,
+        );
+
+        card.removeEventListener(
+          "mouseleave",
+          leave,
+        );
+
+        card.removeEventListener(
+          "focusin",
+          enter,
+        );
+
+        card.removeEventListener(
+          "focusout",
+          leave,
+        );
+      });
+    });
+
+    /* =======================================================
+       CLEANUP
+       ======================================================= */
+
+    cleanup = () => {
+      cleanupHandlers.forEach(
+        (remove) => remove(),
+      );
+
+      cards.forEach((card) => {
+        card.classList.remove(
+          "is-hovered",
+        );
+      });
+    };
+  }
+
+  setupStories();
+
+  document.addEventListener(
+    "astro:after-swap",
+    setupStories,
+  );
+</script>

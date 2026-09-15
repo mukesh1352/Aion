@@ -41,6 +41,14 @@ const historicalContent = defineCollection({
     endYear: z.number().optional(),
 
     // -----------------------------------------
+    // Geography
+    // -----------------------------------------
+
+    latitude: z.number().optional(),
+
+    longitude: z.number().optional(),
+
+    // -----------------------------------------
     // Classification
     // -----------------------------------------
 

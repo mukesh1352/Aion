@@ -1,0 +1,447 @@
+---
+import type { CollectionEntry } from "astro:content";
+
+import "./facts-wall.css";
+
+interface Props {
+  facts: CollectionEntry<"historicalContent">[];
+}
+
+const { facts } = Astro.props;
+
+const factData = facts
+  .filter((entry) => entry.data.type === "fact")
+  .map((entry) => ({
+    id: entry.data.id,
+    title: entry.data.title,
+    summary: entry.data.summary,
+    status: entry.data.status,
+    confidence: entry.data.confidence ?? "",
+    category: entry.data.category ?? "Historical Knowledge",
+    tags: entry.data.tags ?? [],
+    slug: entry.id,
+
+    image: entry.data.image ?? "",
+    imageAlt: entry.data.imageAlt ?? entry.data.title,
+    imageCredit: entry.data.imageCredit ?? "",
+    imageSource: entry.data.imageSource ?? "",
+    imageLicense: entry.data.imageLicense ?? "",
+  }));
+---
+
+<section
+  class="facts-section"
+  data-facts-section
+>
+  <header class="facts-header">
+    <div class="facts-heading">
+      <p class="facts-eyebrow">
+        FACTS &amp; EVIDENCE
+      </p>
+
+      <h2 class="facts-title">
+        The Knowledge Behind the Story
+      </h2>
+    </div>
+
+    <p class="facts-introduction">
+      Discover the ideas, technologies, systems, and
+      evidence that help explain this historical world.
+    </p>
+  </header>
+
+  {
+    factData.length > 0 ? (
+      <div
+        class="facts-wall-shell"
+        data-facts-wall-shell
+      >
+        <div
+          class="facts-wall"
+          data-facts-wall
+        >
+          {factData.map((fact, index) => (
+            <article
+              class:list={[
+                "fact-card",
+                index % 5 === 0 && "fact-card-large",
+                index % 5 === 1 && "fact-card-dark",
+                index % 5 === 3 && "fact-card-offset",
+                fact.image && "fact-card-with-image",
+              ]}
+              data-fact-card
+              data-fact-index={index}
+            >
+              <a
+                href={`/india/${fact.slug}`}
+                class="fact-card-link"
+                aria-label={`Explore ${fact.title}`}
+              >
+                {
+                  fact.image && (
+                    <div
+                      class="fact-card-image"
+                      aria-hidden="true"
+                    >
+                      <img
+                        src={fact.image}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
+
+                      <div class="fact-card-image-overlay"></div>
+
+                      {
+                        fact.imageCredit && (
+                          <span class="fact-card-image-credit">
+                            {fact.imageCredit}
+                          </span>
+                        )
+                      }
+                    </div>
+                  )
+                }
+
+                <div class="fact-card-top">
+                  <span class="fact-number">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+
+                  <span class="fact-category">
+                    {fact.category}
+                  </span>
+                </div>
+
+                <div class="fact-card-body">
+                  <h3 class="fact-title">
+                    {fact.title}
+                  </h3>
+
+                  <p class="fact-summary">
+                    {fact.summary}
+                  </p>
+                </div>
+
+                <div class="fact-card-bottom">
+                  <span class="fact-status">
+                    {fact.status}
+                  </span>
+
+                  {
+                    fact.confidence && (
+                      <span class="fact-confidence">
+                        {fact.confidence}
+                      </span>
+                    )
+                  }
+
+                  <span
+                    class="fact-arrow"
+                    aria-hidden="true"
+                  >
+                    →
+                  </span>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <div class="facts-empty">
+        <p>No facts are available for this era yet.</p>
+      </div>
+    )
+  }
+
+  <footer class="facts-footer">
+    <div class="facts-footer-label">
+      <span>KNOWLEDGE ARCHIVE</span>
+
+      <span>
+        {String(factData.length).padStart(2, "0")} ENTRIES
+      </span>
+    </div>
+
+    <div class="facts-footer-rule"></div>
+  </footer>
+</section>
+
+<script>
+  import { animate, createTimeline } from "animejs";
+
+  type Cleanup = () => void;
+
+  let cleanup: Cleanup | undefined;
+
+  async function setupFacts(): Promise<void> {
+    cleanup?.();
+
+    const root =
+      document.querySelector<HTMLElement>(
+        "[data-facts-section]",
+      );
+
+    if (!root) {
+      return;
+    }
+
+    const cards = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        "[data-fact-card]",
+      ),
+    );
+
+    if (cards.length === 0) {
+      return;
+    }
+
+    const reducedMotion =
+      window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+    /* =======================================================
+       INITIAL ANIMATION
+       ======================================================= */
+
+    if (!reducedMotion) {
+      const eyebrow =
+        root.querySelector<HTMLElement>(
+          ".facts-eyebrow",
+        );
+
+      const title =
+        root.querySelector<HTMLElement>(
+          ".facts-title",
+        );
+
+      const introduction =
+        root.querySelector<HTMLElement>(
+          ".facts-introduction",
+        );
+
+      /*
+       * These elements exist in the component markup.
+       * Explicitly checking them keeps Anime.js happy
+       * with strict TypeScript settings.
+       */
+
+      if (
+        eyebrow &&
+        title &&
+        introduction
+      ) {
+        createTimeline({
+          defaults: {
+            ease: "outCubic",
+          },
+        })
+          .add(
+            eyebrow,
+            {
+              opacity: [0, 1],
+              translateY: [15, 0],
+              duration: 550,
+            },
+          )
+          .add(
+            title,
+            {
+              opacity: [0, 1],
+              translateY: [25, 0],
+              duration: 850,
+            },
+            "-=300",
+          )
+          .add(
+            introduction,
+            {
+              opacity: [0, 1],
+              translateY: [15, 0],
+              duration: 650,
+            },
+            "-=450",
+          )
+          .add(
+            cards,
+            {
+              opacity: [0, 1],
+              translateY: [28, 0],
+              duration: 700,
+
+              /*
+               * Anime.js types this index as possibly
+               * undefined, so explicitly provide a fallback.
+               */
+              delay: (_, index) =>
+                (index ?? 0) * 70,
+            },
+            "-=350",
+          );
+      }
+    }
+
+    /* =======================================================
+       CARD INTERACTION
+       ======================================================= */
+
+    const cleanupHandlers: Cleanup[] = [];
+
+    cards.forEach((card) => {
+      const link =
+        card.querySelector<HTMLAnchorElement>(
+          ".fact-card-link",
+        );
+
+      const arrow =
+        card.querySelector<HTMLElement>(
+          ".fact-arrow",
+        );
+
+      const number =
+        card.querySelector<HTMLElement>(
+          ".fact-number",
+        );
+
+      const image =
+        card.querySelector<HTMLElement>(
+          ".fact-card-image",
+        );
+
+      if (!link) {
+        return;
+      }
+
+      const enter = (): void => {
+        card.classList.add("is-hovered");
+
+        if (reducedMotion) {
+          return;
+        }
+
+        if (arrow) {
+          animate(arrow, {
+            translateX: 7,
+            duration: 350,
+            ease: "outCubic",
+          });
+        }
+
+        if (number) {
+          animate(number, {
+            translateX: 4,
+            duration: 400,
+            ease: "outCubic",
+          });
+        }
+
+        if (image) {
+          animate(image, {
+            scale: 1.025,
+            duration: 700,
+            ease: "outCubic",
+          });
+        }
+      };
+
+      const leave = (): void => {
+        card.classList.remove("is-hovered");
+
+        if (reducedMotion) {
+          return;
+        }
+
+        if (arrow) {
+          animate(arrow, {
+            translateX: 0,
+            duration: 400,
+            ease: "outCubic",
+          });
+        }
+
+        if (number) {
+          animate(number, {
+            translateX: 0,
+            duration: 450,
+            ease: "outCubic",
+          });
+        }
+
+        if (image) {
+          animate(image, {
+            scale: 1,
+            duration: 700,
+            ease: "outCubic",
+          });
+        }
+      };
+
+      card.addEventListener(
+        "mouseenter",
+        enter,
+      );
+
+      card.addEventListener(
+        "mouseleave",
+        leave,
+      );
+
+      card.addEventListener(
+        "focusin",
+        enter,
+      );
+
+      card.addEventListener(
+        "focusout",
+        leave,
+      );
+
+      cleanupHandlers.push(() => {
+        card.removeEventListener(
+          "mouseenter",
+          enter,
+        );
+
+        card.removeEventListener(
+          "mouseleave",
+          leave,
+        );
+
+        card.removeEventListener(
+          "focusin",
+          enter,
+        );
+
+        card.removeEventListener(
+          "focusout",
+          leave,
+        );
+      });
+    });
+
+    /* =======================================================
+       CLEANUP
+       ======================================================= */
+
+    cleanup = () => {
+      cleanupHandlers.forEach(
+        (remove) => remove(),
+      );
+
+      cards.forEach((card) => {
+        card.classList.remove(
+          "is-hovered",
+        );
+      });
+    };
+  }
+
+  setupFacts();
+
+  document.addEventListener(
+    "astro:after-swap",
+    setupFacts,
+  );
+</script>

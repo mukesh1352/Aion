@@ -1,5 +1,8 @@
 ---
-import { getCollection, type CollectionEntry } from "astro:content";
+import {
+  getCollection,
+  type CollectionEntry,
+} from "astro:content";
 
 import {
   getTimeline,
@@ -9,8 +12,11 @@ import {
 import { getStoredEra } from "../../lib/timeline-state";
 
 import PeopleCarousel from "./PeopleCarousel.astro";
+import StoriesGallery from "./StoriesGallery.astro";
+import FactsWall from "./FactsWall.astro";
 
 import "./india-content.css";
+import PlacesList from "./PlacesList.astro";
 
 interface Props {
   worldId: string;
@@ -29,18 +35,19 @@ const timeline = getTimeline(worldId);
    ========================================================== */
 
 const content = await getCollection(
-  "historicalContent"
+  "historicalContent",
 );
 
 const worldContent = content.filter(
-  (item) => item.data.world === worldId
+  (item) =>
+    item.data.world === worldId,
 );
 
 /* ==========================================================
    SERVER-SIDE INITIAL ERA
    ========================================================== */
 
-/*
+/**
  * Determine which era contains the timeline's
  * default year.
  *
@@ -53,12 +60,12 @@ const defaultEra =
   timeline.eras.find(
     (era) =>
       timeline.defaultYear >= era.start &&
-      timeline.defaultYear <= era.end
+      timeline.defaultYear <= era.end,
   ) ?? timeline.eras[0];
 
 if (!defaultEra) {
   throw new Error(
-    `AION: Timeline "${worldId}" has no eras.`
+    `AION: Timeline "${worldId}" has no eras.`,
   );
 }
 
@@ -69,23 +76,56 @@ if (!defaultEra) {
 type HistoricalEntry =
   CollectionEntry<"historicalContent">;
 
-const contentByEra = timeline.eras.map(
-  (era) => {
-    const people =
-      worldContent.filter(
-        (item) =>
-          item.data.era === era.id &&
-          item.data.type === "person"
-      ) as HistoricalEntry[];
+const contentByEra =
+  timeline.eras.map(
+    (era) => {
+      const eraContent =
+        worldContent.filter(
+          (item) =>
+            item.data.era === era.id,
+        );
 
-    return {
-      era,
-      people,
-    };
-  }
-);
+      const people =
+        eraContent.filter(
+          (item) =>
+            item.data.type === "person",
+        ) as HistoricalEntry[];
+
+      const places =
+        eraContent.filter(
+          (item) =>
+            item.data.type === "place",
+        ) as HistoricalEntry[];
+
+      const stories =
+        eraContent.filter(
+          (item) =>
+            item.data.type === "story",
+        ) as HistoricalEntry[];
+
+      const facts =
+        eraContent.filter(
+          (item) =>
+            item.data.type === "fact",
+        ) as HistoricalEntry[];
+
+      const events =
+        eraContent.filter(
+          (item) =>
+            item.data.type === "event",
+        ) as HistoricalEntry[];
+
+      return {
+        era,
+        people,
+        places,
+        stories,
+        facts,
+        events,
+      };
+    },
+  );
 ---
-
 <section
   class="india-content"
   data-india-content
@@ -94,17 +134,26 @@ const contentByEra = timeline.eras.map(
 >
   {
     contentByEra.map(
-      ({ era, people }) => (
+      ({
+        era,
+        people,
+        places,
+        stories,
+        facts,
+        events,
+      }) => (
         <article
           class:list={[
             "era-content",
             {
               "is-active":
-                era.id === defaultEra.id,
+                era.id ===
+                defaultEra.id,
             },
           ]}
           data-era-content={era.id}
         >
+
           <!-- ==================================================
                ERA HEADER
                ================================================== -->
@@ -112,9 +161,13 @@ const contentByEra = timeline.eras.map(
           <header class="era-heading">
             <div class="era-heading-main">
               <span class="era-eyebrow">
-                {formatHistoricalYear(era.start)}
+                {formatHistoricalYear(
+                  era.start,
+                )}
                 {" — "}
-                {formatHistoricalYear(era.end)}
+                {formatHistoricalYear(
+                  era.end,
+                )}
               </span>
 
               <h2>
@@ -129,9 +182,88 @@ const contentByEra = timeline.eras.map(
 
           {
             people.length > 0 && (
-              <PeopleCarousel
-                people={people}
-              />
+              <section
+                class="era-content-section era-people"
+                data-content-section="people"
+              >
+                <PeopleCarousel
+                  people={people}
+                />
+              </section>
+            )
+          }
+
+          <!-- ==================================================
+               PLACES
+               ================================================== -->
+
+          {
+            places.length > 0 && (
+              <section
+                class="era-content-section era-places"
+                data-content-section="places"
+              >
+                <PlacesList
+                  places={places}
+                />
+              </section>
+            )
+          }
+
+          <!-- ==================================================
+               STORIES
+               ================================================== -->
+
+          {
+            stories.length > 0 && (
+              <section
+                class="era-content-section era-stories"
+                data-content-section="stories"
+              >
+                <StoriesGallery
+                  stories={stories}
+                />
+              </section>
+            )
+          }
+
+          <!-- ==================================================
+               FACTS
+               ================================================== -->
+
+          {
+            facts.length > 0 && (
+              <section
+                class="era-content-section era-facts"
+                data-content-section="facts"
+              >
+                <FactsWall
+                  facts={facts}
+                />
+              </section>
+            )
+          }
+
+          <!-- ==================================================
+               EVENTS
+               ================================================== -->
+
+          {
+            events.length > 0 && (
+              <section
+                class="era-events-placeholder"
+                data-content-section="events"
+                aria-hidden="true"
+              >
+                <!--
+                  Events are currently represented by the
+                  historical timeline.
+
+                  A dedicated event stream will be added
+                  separately so chronology remains distinct
+                  from the editorial content sections.
+                -->
+              </section>
             )
           }
 
@@ -140,21 +272,26 @@ const contentByEra = timeline.eras.map(
                ================================================== -->
 
           {
-            people.length === 0 && (
+            people.length === 0 &&
+            places.length === 0 &&
+            stories.length === 0 &&
+            facts.length === 0 &&
+            events.length === 0 && (
               <section class="empty-era">
                 <span class="section-kicker">
-                  PEOPLE
+                  HISTORICAL CONTENT
                 </span>
 
                 <p>
-                  No people have been added to
-                  this era yet.
+                  No historical material has been
+                  added to this era yet.
                 </p>
               </section>
             )
           }
+
         </article>
-      )
+      ),
     )
   }
 </section>
@@ -198,29 +335,30 @@ const contentByEra = timeline.eras.map(
       this.root = root;
 
       this.worldId =
-        root.dataset.worldId ?? "india";
+        root.dataset.worldId ??
+        "india";
 
       /*
        * PeopleCarousel scripts are initialized
        * independently by Astro.
-       *
-       * Collect immediately in case they have
-       * already initialized.
        */
+
       this.collectCarousels();
 
       /*
        * Listen for timeline changes.
        */
+
       document.addEventListener(
         "aion:timeline-change",
-        this.handleTimelineChange
+        this.handleTimelineChange,
       );
 
       /*
        * Restore the user's previously selected
        * era when possible.
        */
+
       const storedEra =
         getStoredEra(this.worldId);
 
@@ -234,11 +372,12 @@ const contentByEra = timeline.eras.map(
        * PeopleCarousel scripts have had an
        * opportunity to initialize.
        */
+
       requestAnimationFrame(() => {
         this.collectCarousels();
 
         this.updateEra(
-          initialEra
+          initialEra,
         );
       });
     }
@@ -252,14 +391,14 @@ const contentByEra = timeline.eras.map(
 
       const sections =
         this.root.querySelectorAll<CarouselSection>(
-          "[data-carousel-section]"
+          "[data-carousel-section]",
         );
 
       sections.forEach(
         (section) => {
           const eraElement =
             section.closest<HTMLElement>(
-              "[data-era-content]"
+              "[data-era-content]",
             );
 
           const eraId =
@@ -274,10 +413,10 @@ const contentByEra = timeline.eras.map(
           ) {
             this.carousels.set(
               eraId,
-              carousel
+              carousel,
             );
           }
-        }
+        },
       );
     }
 
@@ -286,7 +425,7 @@ const contentByEra = timeline.eras.map(
        ======================================================== */
 
     private handleTimelineChange = (
-      event: Event
+      event: Event,
     ) => {
       const customEvent =
         event as CustomEvent<TimelineChangeDetail>;
@@ -302,6 +441,7 @@ const contentByEra = timeline.eras.map(
        * Ignore timeline events belonging
        * to another world.
        */
+
       if (
         detail.worldId !==
         this.worldId
@@ -310,7 +450,7 @@ const contentByEra = timeline.eras.map(
       }
 
       this.updateEra(
-        detail.eraId
+        detail.eraId,
       );
     };
 
@@ -319,7 +459,7 @@ const contentByEra = timeline.eras.map(
        ======================================================== */
 
     private updateEra(
-      eraId: string
+      eraId: string,
     ) {
       if (!eraId) {
         return;
@@ -328,21 +468,23 @@ const contentByEra = timeline.eras.map(
       /*
        * Show only the selected era.
        */
+
       this.root
         .querySelectorAll<HTMLElement>(
-          "[data-era-content]"
+          "[data-era-content]",
         )
         .forEach(
           (element) => {
             const active =
-              element.dataset.eraContent ===
+              element.dataset
+                .eraContent ===
               eraId;
 
             element.classList.toggle(
               "is-active",
-              active
+              active,
             );
-          }
+          },
         );
 
       /*
@@ -352,20 +494,16 @@ const contentByEra = timeline.eras.map(
        * The browser therefore may not have
        * calculated its dimensions yet.
        *
-       * Wait for the DOM to paint, then refresh
-       * its 3D People carousel.
+       * Wait for the DOM to paint, then
+       * refresh its 3D People carousel.
        */
+
       requestAnimationFrame(() => {
-        /*
-         * Try to collect again because the
-         * PeopleCarousel child may have initialized
-         * after this controller.
-         */
         this.collectCarousels();
 
         const carousel =
           this.carousels.get(
-            eraId
+            eraId,
           );
 
         carousel?.refresh();
@@ -379,7 +517,7 @@ const contentByEra = timeline.eras.map(
     public destroy() {
       document.removeEventListener(
         "aion:timeline-change",
-        this.handleTimelineChange
+        this.handleTimelineChange,
       );
 
       this.carousels.clear();
@@ -392,14 +530,14 @@ const contentByEra = timeline.eras.map(
 
   const roots =
     document.querySelectorAll<HTMLElement>(
-      "[data-india-content]"
+      "[data-india-content]",
     );
 
   roots.forEach(
     (root) => {
       new IndiaContentController(
-        root
+        root,
       );
-    }
+    },
   );
 </script>

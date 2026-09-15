@@ -1,0 +1,757 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { formatHistoricalYear } from "../../lib/timeline";
+import "./places-list.css";
+
+interface Props {
+  places: CollectionEntry<"historicalContent">[];
+}
+
+const { places } = Astro.props;
+---
+
+<section
+  class="places-section"
+  data-places-section
+>
+  <!-- =====================================================
+       HEADER
+       ===================================================== -->
+
+  <header class="places-header">
+    <div class="places-heading">
+      <p class="places-eyebrow">
+        PLACES
+      </p>
+
+      <h2 class="places-title">
+        Where History Took Place
+      </h2>
+    </div>
+
+    <div class="places-header-meta">
+      <p class="places-introduction">
+        Explore the places that shaped this historical world.
+      </p>
+
+      <span class="places-count">
+        {String(places.length).padStart(2, "0")} LOCATIONS
+      </span>
+    </div>
+  </header>
+
+  <!-- =====================================================
+       PLACES LIST
+       ===================================================== -->
+
+  {
+    places.length > 0 && (
+      <div
+        class="places-list-shell"
+        data-places-list-shell
+      >
+        <div class="places-list">
+          {
+            places.map((place, index) => {
+              const startYear =
+                place.data.startYear;
+
+              const endYear =
+                place.data.endYear;
+
+              return (
+                <a
+                  href={`/india/${place.id}`}
+                  class="place-item"
+                  data-place-item
+                  data-place-index={index}
+                >
+                  <!-- -----------------------------------------
+                       INDEX
+                       ----------------------------------------- -->
+
+                  <div class="place-index">
+                    <span class="place-index-number">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <span class="place-index-line"></span>
+                  </div>
+
+                  <!-- -----------------------------------------
+                       MAIN CONTENT
+                       ----------------------------------------- -->
+
+                  <div class="place-main">
+                    <div class="place-topline">
+                      <span class="place-category">
+                        {place.data.category ??
+                          "HISTORICAL PLACE"}
+                      </span>
+
+                      {
+                        place.data.status && (
+                          <span
+                            class:list={[
+                              "place-status",
+                              `status-${place.data.status}`,
+                            ]}
+                          >
+                            {place.data.status.replace(
+                              /-/g,
+                              " ",
+                            )}
+                          </span>
+                        )
+                      }
+                    </div>
+
+                    <h3 class="place-title">
+                      {place.data.title}
+                    </h3>
+
+                    {
+                      place.data.subtitle && (
+                        <p class="place-subtitle">
+                          {place.data.subtitle}
+                        </p>
+                      )
+                    }
+
+                    <p class="place-summary">
+                      {place.data.summary}
+                    </p>
+
+                    <div class="place-bottom">
+                      <div class="place-period">
+                        {
+                          typeof startYear ===
+                            "number" &&
+                            formatHistoricalYear(
+                              startYear,
+                            )
+                        }
+
+                        {
+                          typeof startYear ===
+                            "number" &&
+                            typeof endYear ===
+                              "number" &&
+                            " — "
+                        }
+
+                        {
+                          typeof endYear ===
+                            "number" &&
+                            formatHistoricalYear(
+                              endYear,
+                            )
+                        }
+                      </div>
+
+                      <span class="place-explore">
+                        <span class="place-explore-text">
+                          EXPLORE PLACE
+                        </span>
+
+                        <span
+                          class="place-explore-arrow"
+                          aria-hidden="true"
+                        >
+                          →
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- -----------------------------------------
+                       HOVER MARK
+                       ----------------------------------------- -->
+
+                  <div
+                    class="place-hover-mark"
+                    aria-hidden="true"
+                  >
+                    <span></span>
+                  </div>
+                </a>
+              );
+            })
+          }
+        </div>
+      </div>
+    )
+  }
+
+  <!-- =====================================================
+       EMPTY STATE
+       ===================================================== -->
+
+  {
+    places.length === 0 && (
+      <div class="places-empty">
+        <span>PLACES</span>
+
+        <p>
+          No historical places have been added
+          to this era yet.
+        </p>
+      </div>
+    )
+  }
+</section>
+
+<script>
+  import {
+    animate,
+    createTimeline,
+  } from "animejs";
+
+  /* =========================================================
+     TYPES
+     ========================================================= */
+
+  interface PlaceItemHandler {
+    item: HTMLElement;
+    activate: () => void;
+    deactivate: () => void;
+  }
+
+  type Cleanup = () => void;
+
+  /* =========================================================
+     GLOBAL CLEANUP
+     ========================================================= */
+
+  let cleanup: Cleanup | undefined;
+
+  /* =========================================================
+     SETUP
+     ========================================================= */
+
+  function setupPlacesList(): void {
+    cleanup?.();
+
+    const roots =
+      document.querySelectorAll<HTMLElement>(
+        "[data-places-section]",
+      );
+
+    if (roots.length === 0) {
+      return;
+    }
+
+    const cleanups: Cleanup[] = [];
+
+    roots.forEach(
+      (root: HTMLElement) => {
+        const items =
+          Array.from(
+            root.querySelectorAll<HTMLElement>(
+              "[data-place-item]",
+            ),
+          );
+
+        const eyebrow =
+          root.querySelector<HTMLElement>(
+            ".places-eyebrow",
+          );
+
+        const title =
+          root.querySelector<HTMLElement>(
+            ".places-title",
+          );
+
+        const introduction =
+          root.querySelector<HTMLElement>(
+            ".places-introduction",
+          );
+
+        const count =
+          root.querySelector<HTMLElement>(
+            ".places-count",
+          );
+
+        if (items.length === 0) {
+          return;
+        }
+
+        const reducedMotion =
+          window
+            .matchMedia(
+              "(prefers-reduced-motion: reduce)",
+            )
+            .matches;
+
+        /* ===================================================
+           INITIAL STATE
+           =================================================== */
+
+        if (!reducedMotion) {
+          if (eyebrow) {
+            eyebrow.style.opacity = "0";
+            eyebrow.style.transform =
+              "translateY(14px)";
+          }
+
+          if (title) {
+            title.style.opacity = "0";
+            title.style.transform =
+              "translateY(24px)";
+          }
+
+          if (introduction) {
+            introduction.style.opacity = "0";
+            introduction.style.transform =
+              "translateY(14px)";
+          }
+
+          if (count) {
+            count.style.opacity = "0";
+            count.style.transform =
+              "translateY(10px)";
+          }
+
+          items.forEach(
+            (item: HTMLElement) => {
+              item.style.opacity = "0";
+              item.style.transform =
+                "translateY(32px)";
+            },
+          );
+        }
+
+        /* ===================================================
+           HEADER ANIMATION
+           =================================================== */
+
+        if (!reducedMotion) {
+          const headerTimeline =
+            createTimeline({
+              defaults: {
+                ease: "outCubic",
+              },
+            });
+
+          if (eyebrow) {
+            headerTimeline.add(
+              eyebrow,
+              {
+                opacity: [0, 1],
+                translateY: [14, 0],
+                duration: 550,
+              },
+            );
+          }
+
+          if (title) {
+            headerTimeline.add(
+              title,
+              {
+                opacity: [0, 1],
+                translateY: [24, 0],
+                duration: 850,
+              },
+              "-=280",
+            );
+          }
+
+          if (introduction) {
+            headerTimeline.add(
+              introduction,
+              {
+                opacity: [0, 1],
+                translateY: [14, 0],
+                duration: 600,
+              },
+              "-=450",
+            );
+          }
+
+          if (count) {
+            headerTimeline.add(
+              count,
+              {
+                opacity: [0, 1],
+                translateY: [10, 0],
+                duration: 500,
+              },
+              "-=400",
+            );
+          }
+        }
+
+        /* ===================================================
+           ITEM REVEAL
+           =================================================== */
+
+        const revealItem = (
+          item: HTMLElement,
+          index: number,
+        ): void => {
+          if (reducedMotion) {
+            item.style.opacity = "1";
+            item.style.transform =
+              "translateY(0)";
+            return;
+          }
+
+          animate(item, {
+            opacity: [0, 1],
+            translateY: [32, 0],
+            duration: 850,
+            delay: index * 90,
+            ease: "outCubic",
+          });
+        };
+
+        /* ===================================================
+           INTERSECTION OBSERVER
+           =================================================== */
+
+        if (
+          "IntersectionObserver" in
+          window
+        ) {
+          const observer =
+            new IntersectionObserver(
+              (
+                entries: IntersectionObserverEntry[],
+              ) => {
+                entries.forEach(
+                  (
+                    entry: IntersectionObserverEntry,
+                  ) => {
+                    if (
+                      !entry.isIntersecting
+                    ) {
+                      return;
+                    }
+
+                    const item =
+                      entry.target as HTMLElement;
+
+                    const index =
+                      Number(
+                        item.dataset
+                          .placeIndex ??
+                          "0",
+                      );
+
+                    revealItem(
+                      item,
+                      index,
+                    );
+
+                    observer.unobserve(
+                      item,
+                    );
+                  },
+                );
+              },
+              {
+                threshold: 0.12,
+                rootMargin:
+                  "0px 0px -8% 0px",
+              },
+            );
+
+          items.forEach(
+            (item: HTMLElement) => {
+              observer.observe(item);
+            },
+          );
+
+          cleanups.push(() => {
+            observer.disconnect();
+          });
+        } else {
+          items.forEach(
+            (
+              item: HTMLElement,
+              index: number,
+            ) => {
+              revealItem(
+                item,
+                index,
+              );
+            },
+          );
+        }
+
+        /* ===================================================
+           HOVER / FOCUS INTERACTION
+           =================================================== */
+
+        const itemHandlers: PlaceItemHandler[] =
+          [];
+
+        items.forEach(
+          (item: HTMLElement) => {
+            const indexNumber =
+              item.querySelector<HTMLElement>(
+                ".place-index-number",
+              );
+
+            const indexLine =
+              item.querySelector<HTMLElement>(
+                ".place-index-line",
+              );
+
+            const titleElement =
+              item.querySelector<HTMLElement>(
+                ".place-title",
+              );
+
+            const arrow =
+              item.querySelector<HTMLElement>(
+                ".place-explore-arrow",
+              );
+
+            const hoverMark =
+              item.querySelector<HTMLElement>(
+                ".place-hover-mark",
+              );
+
+            /* ---------------------------------------------
+               ACTIVATE
+               --------------------------------------------- */
+
+            const activate =
+              (): void => {
+                item.classList.add(
+                  "is-hovered",
+                );
+
+                if (reducedMotion) {
+                  return;
+                }
+
+                if (indexNumber) {
+                  animate(
+                    indexNumber,
+                    {
+                      translateX: 8,
+                      scale: 1.08,
+                      duration: 350,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (indexLine) {
+                  animate(
+                    indexLine,
+                    {
+                      scaleY: 1,
+                      opacity: 1,
+                      duration: 300,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (titleElement) {
+                  animate(
+                    titleElement,
+                    {
+                      translateX: 8,
+                      duration: 400,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (arrow) {
+                  animate(
+                    arrow,
+                    {
+                      translateX: 8,
+                      duration: 400,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (hoverMark) {
+                  animate(
+                    hoverMark,
+                    {
+                      opacity: [0, 1],
+                      scale: [0.7, 1],
+                      duration: 350,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+              };
+
+            /* ---------------------------------------------
+               DEACTIVATE
+               --------------------------------------------- */
+
+            const deactivate =
+              (): void => {
+                item.classList.remove(
+                  "is-hovered",
+                );
+
+                if (reducedMotion) {
+                  return;
+                }
+
+                if (indexNumber) {
+                  animate(
+                    indexNumber,
+                    {
+                      translateX: 0,
+                      scale: 1,
+                      duration: 300,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (indexLine) {
+                  animate(
+                    indexLine,
+                    {
+                      scaleY: 0.45,
+                      opacity: 0.45,
+                      duration: 300,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (titleElement) {
+                  animate(
+                    titleElement,
+                    {
+                      translateX: 0,
+                      duration: 300,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (arrow) {
+                  animate(
+                    arrow,
+                    {
+                      translateX: 0,
+                      duration: 300,
+                      ease: "outCubic",
+                    },
+                  );
+                }
+
+                if (hoverMark) {
+                  animate(
+                    hoverMark,
+                    {
+                      opacity: 0,
+                      scale: 0.7,
+                      duration: 250,
+                      ease: "inCubic",
+                    },
+                  );
+                }
+              };
+
+            /* ---------------------------------------------
+               EVENTS
+               --------------------------------------------- */
+
+            item.addEventListener(
+              "mouseenter",
+              activate,
+            );
+
+            item.addEventListener(
+              "mouseleave",
+              deactivate,
+            );
+
+            item.addEventListener(
+              "focus",
+              activate,
+            );
+
+            item.addEventListener(
+              "blur",
+              deactivate,
+            );
+
+            itemHandlers.push({
+              item,
+              activate,
+              deactivate,
+            });
+          },
+        );
+
+        /* =================================================
+           CLEANUP HANDLERS
+           ================================================= */
+
+        cleanups.push(() => {
+          itemHandlers.forEach(
+            ({
+              item,
+              activate,
+              deactivate,
+            }: PlaceItemHandler) => {
+              item.removeEventListener(
+                "mouseenter",
+                activate,
+              );
+
+              item.removeEventListener(
+                "mouseleave",
+                deactivate,
+              );
+
+              item.removeEventListener(
+                "focus",
+                activate,
+              );
+
+              item.removeEventListener(
+                "blur",
+                deactivate,
+              );
+            },
+          );
+        });
+      },
+    );
+
+    /* =======================================================
+       GLOBAL CLEANUP
+       ======================================================= */
+
+    cleanup = (): void => {
+      cleanups.forEach(
+        (destroy: Cleanup) => {
+          destroy();
+        },
+      );
+    };
+  }
+
+  /* =========================================================
+     INITIALIZE
+     ========================================================= */
+
+  setupPlacesList();
+
+  /* =========================================================
+     ASTRO VIEW TRANSITIONS
+     ========================================================= */
+
+  document.addEventListener(
+    "astro:after-swap",
+    setupPlacesList,
+  );
+</script>
