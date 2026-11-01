@@ -1,4 +1,4 @@
-# 🌍 World History Explorer
+# World History Explorer
 
 > Explore humanity through space and time.
 
@@ -32,7 +32,7 @@ The primary experience begins with an interactive world map.
 WORLD
    │
    ▼
-🗺️ WORLD MAP
+ WORLD MAP
    │
    ▼
 HOVER REGION
@@ -633,4 +633,4 @@ More information about contribution guidelines will be added as the project matu
 
 ## License
 
-License information will be added once the project structure and content strategy are finalized.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
